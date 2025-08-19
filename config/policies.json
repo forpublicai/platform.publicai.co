@@ -1,0 +1,62 @@
+{
+  "policies": [
+    {
+      "handler": {
+        "export": "OpenIdJwtInboundPolicy",
+        "module": "$import(@zuplo/runtime)",
+        "options": {
+          "audience": "https://docs.publicai.company/api",
+          "issuer": "https://dev-jyeiymyqbfr1xz21.us.auth0.com/",
+          "jwkUrl": "https://dev-jyeiymyqbfr1xz21.us.auth0.com/.well-known/jwks.json"
+        }
+      },
+      "name": "open-id-jwt-auth-inbound",
+      "policyType": "open-id-jwt-auth-inbound"
+    },
+    {
+      "handler": {
+        "export": "ApiKeyInboundPolicy",
+        "module": "$import(@zuplo/runtime)",
+        "options": {
+          "allowUnauthenticatedRequests": false,
+          "cacheTtlSeconds": 60
+        }
+      },
+      "name": "api-key-inbound",
+      "policyType": "api-key-inbound"
+    },
+    {
+      "handler": {
+        "export": "SetHeadersInboundPolicy",
+        "module": "$import(@zuplo/runtime)",
+        "options": {
+          "headers": [
+            {
+              "name": "Authorization",
+              "value": "Bearer $env(SEALION_API_KEY)"
+            }
+          ]
+        }
+      },
+      "name": "set-sealion-auth",
+      "policyType": "set-headers-inbound"
+    },
+    {
+      "handler": {
+        "export": "RateLimitInboundPolicy",
+        "module": "$import(@zuplo/runtime)",
+        "options": {
+          "rateLimitBy": "function",
+          "requestsAllowed": 2,
+          "timeWindowMinutes": 1,
+          "identifier": {
+            "module": "$import(./modules/user-rate-limiter)",
+            "export": "getUserIdentifier"
+          }
+        }
+      },
+      "name": "user-rate-limit",
+      "policyType": "rate-limit-inbound"
+    }
+  ]
+}
