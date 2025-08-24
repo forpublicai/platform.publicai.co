@@ -15,11 +15,11 @@ interface ComputeInfo {
 function getComputeInfo(provider: string, targetUrl: string): ComputeInfo {
   // Map your providers to their compute locations and sponsors
   switch (provider) {
-    case "SeaLion":
+    case "AI Singapore":
       return {
         location: "Singapore",
         sponsor: "AI Singapore",
-        provider: "SeaLion AI"
+        provider: "AI Singapore"
       };
     case "OpenRouter":
       return {
