@@ -24,15 +24,15 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
         object: "model",
         created: Math.floor(Date.now() / 1000),
         owned_by: "aisingapore",
-        provider: "sealion",
+        provider: "aisingapore",
         load_balanced: false
       },
       {
-        id: "aisingapore/Llama-SEA-LION-v3-70B-IT", 
+        id: "aisingapore/Llama-SEA-LION-v3-8B-IT", 
         object: "model",
         created: Math.floor(Date.now() / 1000),
         owned_by: "aisingapore",
-        provider: "sealion",
+        provider: "aisingapore",
         load_balanced: false
       },
       // OpenAI GPT OSS 120B (load balanced across OpenRouter and Together AI)
