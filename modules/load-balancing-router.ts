@@ -79,7 +79,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
     switch (modelName) {
       // SeaLion models - single endpoint
       case "aisingapore/Gemma-SEA-LION-v3-9B-IT":
-      case "aisingapore/Llama-SEA-LION-v3.5-8B-R":
+      case "aisingapore/Gemma-SEA-LION-v4-27B-IT-quantized":
         targetUrl = "https://api.sea-lion.ai/v1/chat/completions";
         headers = {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
             model: modelName,
             supported_models: [
               "aisingapore/Gemma-SEA-LION-v3-9B-IT",
-              "aisingapore/Llama-SEA-LION-v3.5-8B-R", 
+              "aisingapore/Gemma-SEA-LION-v4-27B-IT-quantized", 
               "openai/gpt-oss-120b"
             ]
           }),
