@@ -44,7 +44,7 @@
           "corsPolicy": "none",
           "handler": {
             "export": "default",
-            "module": "$import(./modules/model-load-balancer)",
+            "module": "$import(./modules/load-balancing-router)",
             "options": {}
           },
           "policies": {

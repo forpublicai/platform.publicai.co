@@ -79,14 +79,14 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
     switch (modelName) {
       // SeaLion models - single endpoint
       case "aisingapore/Gemma-SEA-LION-v3-9B-IT":
-      case "aisingapore/Llama-SEA-LION-v3-70B-IT":
+      case "aisingapore/Llama-SEA-LION-v3-8B-IT":
         targetUrl = "https://api.sea-lion.ai/v1/chat/completions";
         headers = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${environment.SEALION_API_KEY}`
         };
-        selectedProvider = "SeaLion";
-        context.log.info(`Routing ${modelName} to SeaLion`);
+        selectedProvider = "AI Singapore";
+        context.log.info(`Routing ${modelName} to AI Singapore`);
         break;
 
       // OpenAI GPT OSS 120B - random 50/50 between OpenRouter and Together AI
@@ -109,7 +109,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${environment.TOGETHER_API_KEY}`
           };
-          selectedProvider = "Together";
+          selectedProvider = "Together AI";
           randomChoiceResult = "Together";
           // Keep original model name for Together AI
           context.log.info(`Random load balancing ${modelName} to Together`);
@@ -123,7 +123,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
             model: modelName,
             supported_models: [
               "aisingapore/Gemma-SEA-LION-v3-9B-IT",
-              "aisingapore/Llama-SEA-LION-v3-70B-IT", 
+              "aisingapore/Llama-SEA-LION-v3-8B-IT", 
               "openai/gpt-oss-120b"
             ]
           }),
