@@ -49,9 +49,22 @@ function shouldInjectComputeInfo(messages: any[]): boolean {
 }
 
 function injectComputeInfoMessage(messages: any[], computeInfo: ComputeInfo): any[] {
+  const computeInfoContent = `You are running on compute infrastructure hosted in ${computeInfo.location}, provided by ${computeInfo.provider}${computeInfo.sponsor !== computeInfo.provider ? `, sponsored by ${computeInfo.sponsor}` : ''}. Please mention this information naturally in your first response to new conversations.`;
+
+  // If first message is already a system message, append to it
+  if (messages.length > 0 && messages[0].role === "system") {
+    const updatedMessages = [...messages];
+    updatedMessages[0] = {
+      ...updatedMessages[0],
+      content: updatedMessages[0].content + "\n\n" + computeInfoContent
+    };
+    return updatedMessages;
+  }
+
+  // Otherwise, add as new system message
   const systemMessage = {
     role: "system",
-    content: `You are running on compute infrastructure hosted in ${computeInfo.location}, provided by ${computeInfo.provider}${computeInfo.sponsor !== computeInfo.provider ? `, sponsored by ${computeInfo.sponsor}` : ''}. Please mention this information naturally in your first response to new conversations.`
+    content: computeInfoContent
   };
 
   return [systemMessage, ...messages];
