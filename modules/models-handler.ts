@@ -28,7 +28,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
         load_balanced: false
       },
       {
-        id: "aisingapore/Llama-SEA-LION-v3-8B-IT", 
+        id: "aisingapore/Llama-SEA-LION-v3.5-8B-R", 
         object: "model",
         created: Math.floor(Date.now() / 1000),
         owned_by: "aisingapore",
