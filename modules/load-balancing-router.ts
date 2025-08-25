@@ -225,6 +225,17 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
 
     context.log.info(`✅ Successfully routed ${modelName} to ${provider.name} in ${computeInfo.location}`);
 
+    // Handle streaming responses
+    if (requestBody.stream === true) {
+      context.log.info(`📡 Streaming response from ${provider.name}`);
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders
+      });
+    }
+
+    // Handle non-streaming responses
     return new Response(await response.text(), {
       status: response.status,
       statusText: response.statusText,
