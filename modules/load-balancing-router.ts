@@ -228,6 +228,12 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
     // Handle streaming responses
     if (requestBody.stream === true) {
       context.log.info(`📡 Streaming response from ${provider.name}`);
+      
+      // Add SSE headers for streaming
+      responseHeaders.set('Content-Type', 'text/event-stream');
+      responseHeaders.set('Cache-Control', 'no-cache');
+      responseHeaders.set('Connection', 'keep-alive');
+      
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
