@@ -2,7 +2,7 @@ import type { ZudokuConfig } from "zudoku";
 
 const config: ZudokuConfig = {
   site: {
-    title: "Public AI Developer Portal",
+    title: "Public AI Gateway",
     logo: {
       src: {
         light: "https://app.publicai.company/static/favicon.png",
@@ -11,8 +11,8 @@ const config: ZudokuConfig = {
     },
   },
   metadata: {
-    title: "Developer Portal",
-    description: "Developer Portal",
+    title: "Public AI Gateway - Developer Portal",
+    description: "Access open-source AI models through our unified gateway. Documentation, API reference, and tools for developers.",
   },
   navigation: [
     {
@@ -27,24 +27,30 @@ const config: ZudokuConfig = {
             {
               type: "doc",
               file: "example",
+              label: "Quick Start Guide",
             }
           ],
         },
         {
           type: "category",
-          label: "Useful Links",
+          label: "Resources",
           collapsible: false,
           icon: "link",
           items: [
             {
               type: "link",
-              label: "Zuplo Docs",
-              to: "https://zuplo.com/docs/dev-portal/introduction",
+              label: "GitHub",
+              to: "https://github.com/publicai",
             },
             {
               type: "link",
-              label: "Developer Portal Docs",
-              to: "https://zuplo.com/docs/dev-portal/introduction",
+              label: "Swiss AI",
+              to: "https://www.swissai.cscs.ch",
+            },
+            {
+              type: "doc",
+              file: "inference-partners-faq",
+              label: "Inference Partners FAQ",
             },
           ],
         },
@@ -72,9 +78,9 @@ const config: ZudokuConfig = {
     // For more information, see:
     // https://zuplo.com/docs/dev-portal/zudoku/configuration/authentication
     type: "auth0",
-    domain: "dev-jyeiymyqbfr1xz21.us.auth0.com",
+    domain: "login.publicai.company",
     clientId: "GsHpOedTKzJpnKlQIIeXDBKjssyOmOsj",
-    audience: "https://docs.publicai.company/api",
+    audience: "https://platform.publicai.company/api",
   },
   // authentication: {
   //   type: "supabase",
