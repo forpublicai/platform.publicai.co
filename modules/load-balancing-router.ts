@@ -50,14 +50,14 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     }
   },
   'together': {
-    name: 'Together AI',
+    name: 'TogetherAI',
     baseUrl: 'https://api.together.xyz/v1/chat/completions',
     apiKey: environment.TOGETHER_API_KEY,
     requiresMaxTokens: true,
     computeInfo: {
       location: 'United States',
-      sponsor: 'Together AI',
-      provider: 'Together AI'
+      sponsor: 'TogetherAI',
+      provider: 'TogetherAI'
     }
   }
 };
