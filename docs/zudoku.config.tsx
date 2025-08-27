@@ -80,7 +80,7 @@ const config: ZudokuConfig = {
     type: "auth0",
     domain: "login.publicai.company",
     clientId: "GsHpOedTKzJpnKlQIIeXDBKjssyOmOsj",
-    audience: "https://platform.publicai.company/api",
+    audience: "https://docs.publicai.company/api",
   },
   // authentication: {
   //   type: "supabase",
