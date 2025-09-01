@@ -9,7 +9,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
   const body = await request.json();
 
   const response = await fetch(
-    `https://api.publicai.company/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?with-api-key=true`,
+    `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?with-api-key=true`,
     {
       method: "POST",
       headers: {
