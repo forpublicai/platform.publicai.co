@@ -23,7 +23,7 @@
             "export": "urlForwardHandler",
             "module": "$import(@zuplo/runtime)",
             "options": {
-              "baseUrl": "https://api-internal.publicai.company"
+              "baseUrl": "https://api-internal.publicai.co"
             }
           },
           "policies": {
@@ -49,7 +49,7 @@
             "export": "urlForwardHandler",
             "module": "$import(@zuplo/runtime)",
             "options": {
-              "baseUrl": "https://api-internal.publicai.company"
+              "baseUrl": "https://api-internal.publicai.co"
             }
           },
           "policies": {

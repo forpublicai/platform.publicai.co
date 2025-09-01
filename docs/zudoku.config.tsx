@@ -5,8 +5,8 @@ const config: ZudokuConfig = {
     title: "Public AI Gateway",
     logo: {
       src: {
-        light: "https://app.publicai.company/static/favicon.png",
-        dark: "https://app.publicai.company/static/favicon.png",
+        light: "https://chat.publicai.co/static/favicon.png",
+        dark: "https://chat.publicai.co/static/favicon.png",
       },
     },
   },
@@ -78,7 +78,7 @@ const config: ZudokuConfig = {
     // For more information, see:
     // https://zuplo.com/docs/dev-portal/zudoku/configuration/authentication
     type: "auth0",
-    domain: "login.publicai.company",
+    domain: "login.publicai.co",
     clientId: "GsHpOedTKzJpnKlQIIeXDBKjssyOmOsj",
     audience: "https://docs.publicai.company/api",
   },
