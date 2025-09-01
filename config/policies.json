@@ -33,12 +33,12 @@
           "headers": [
             {
               "name": "Authorization",
-              "value": "Bearer $env(SEALION_API_KEY)"
+              "value": "Bearer $env(LITELLM_API_KEY)"
             }
           ]
         }
       },
-      "name": "set-sealion-auth",
+      "name": "set-litellm-auth",
       "policyType": "set-headers-inbound"
     },
     {

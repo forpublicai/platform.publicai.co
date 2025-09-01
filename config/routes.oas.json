@@ -20,13 +20,16 @@
         "x-zuplo-route": {
           "corsPolicy": "none",
           "handler": {
-            "export": "default",
-            "module": "$import(./modules/models-handler)",
-            "options": {}
+            "export": "urlForwardHandler",
+            "module": "$import(@zuplo/runtime)",
+            "options": {
+              "baseUrl": "https://api-internal.publicai.company"
+            }
           },
           "policies": {
             "inbound": [
-              "api-key-inbound"
+              "api-key-inbound",
+              "set-litellm-auth"
             ]
           }
         },
@@ -43,14 +46,17 @@
         "x-zuplo-route": {
           "corsPolicy": "none",
           "handler": {
-            "export": "default",
-            "module": "$import(./modules/load-balancing-router)",
-            "options": {}
+            "export": "urlForwardHandler",
+            "module": "$import(@zuplo/runtime)",
+            "options": {
+              "baseUrl": "https://api-internal.publicai.company"
+            }
           },
           "policies": {
             "inbound": [
               "api-key-inbound",
-              "user-rate-limit"
+              "user-rate-limit",
+              "set-litellm-auth"
             ]
           }
         },
