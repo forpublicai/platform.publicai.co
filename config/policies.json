@@ -5,9 +5,9 @@
         "export": "OpenIdJwtInboundPolicy",
         "module": "$import(@zuplo/runtime)",
         "options": {
-          "audience": "https://docs.publicai.company/api",
-          "issuer": "https://dev-jyeiymyqbfr1xz21.us.auth0.com/",
-          "jwkUrl": "https://dev-jyeiymyqbfr1xz21.us.auth0.com/.well-known/jwks.json"
+          "audience": "https://platform.publicai.company/api",
+          "issuer": "https://login.publicai.company/",
+          "jwkUrl": "https://login.publicai.company/.well-known/jwks.json"
         }
       },
       "name": "open-id-jwt-auth-inbound",
