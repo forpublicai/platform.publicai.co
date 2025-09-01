@@ -5,7 +5,7 @@
         "export": "OpenIdJwtInboundPolicy",
         "module": "$import(@zuplo/runtime)",
         "options": {
-          "audience": "https://platform.publicai.company/api",
+          "audience": "https://docs.publicai.company/api",
           "issuer": "https://login.publicai.company/",
           "jwkUrl": "https://login.publicai.company/.well-known/jwks.json"
         }
