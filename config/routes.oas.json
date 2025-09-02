@@ -17,6 +17,18 @@
       "get": {
         "summary": "Lists the currently available models",
         "description": "",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelListResponse"
+                }
+              }
+            }
+          }
+        },
         "x-zuplo-route": {
           "corsPolicy": "none",
           "handler": {
@@ -43,6 +55,28 @@
       "post": {
         "summary": "Creates a model response for the given chat conversation",
         "description": "",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatCompletionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatCompletionResponse"
+                }
+              }
+            }
+          }
+        },
         "x-zuplo-route": {
           "corsPolicy": "none",
           "handler": {
@@ -66,71 +100,364 @@
   },
   "components": {
     "schemas": {
-      "Todo": {
+      "Model": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "description": "The todo ID"
-          },
-          "title": {
             "type": "string",
-            "description": "The todo title"
+            "description": "The model identifier"
           },
-          "completed": {
-            "type": "boolean",
-            "description": "Whether the todo is completed"
+          "object": {
+            "type": "string",
+            "enum": ["model"],
+            "description": "The object type, which is always 'model'"
           },
-          "userId": {
+          "created": {
             "type": "integer",
-            "description": "The user ID who owns the todo"
+            "description": "The Unix timestamp (in seconds) when the model was created"
+          },
+          "owned_by": {
+            "type": "string",
+            "description": "The organization that owns the model"
           }
         },
         "required": [
           "id",
-          "title",
-          "completed",
-          "userId"
+          "object",
+          "created",
+          "owned_by"
         ]
       },
-      "CreateTodo": {
+      "ModelListResponse": {
         "type": "object",
         "properties": {
-          "title": {
+          "object": {
             "type": "string",
-            "description": "The todo title"
+            "enum": ["list"],
+            "description": "The object type, which is always 'list'"
           },
-          "completed": {
-            "type": "boolean",
-            "description": "Whether the todo is completed",
-            "default": false
-          },
-          "userId": {
-            "type": "integer",
-            "description": "The user ID who owns the todo"
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Model"
+            },
+            "description": "The list of models"
           }
         },
         "required": [
-          "title",
-          "userId"
+          "object",
+          "data"
         ]
       },
-      "UpdateTodo": {
+      "ChatMessage": {
         "type": "object",
         "properties": {
-          "title": {
+          "role": {
             "type": "string",
-            "description": "The todo title"
+            "enum": ["system", "user", "assistant", "tool"],
+            "description": "The role of the message author"
           },
-          "completed": {
-            "type": "boolean",
-            "description": "Whether the todo is completed"
+          "content": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["text", "image_url"]
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "image_url": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "detail": {
+                          "type": "string",
+                          "enum": ["auto", "low", "high"]
+                        }
+                      },
+                      "required": ["url"]
+                    }
+                  },
+                  "required": ["type"]
+                }
+              }
+            ],
+            "description": "The contents of the message"
           },
-          "userId": {
-            "type": "integer",
-            "description": "The user ID who owns the todo"
+          "name": {
+            "type": "string",
+            "description": "An optional name for the participant"
+          },
+          "tool_call_id": {
+            "type": "string",
+            "description": "Tool call that this message is responding to"
+          },
+          "tool_calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["function"]
+                },
+                "function": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "arguments": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["name", "arguments"]
+                }
+              },
+              "required": ["id", "type", "function"]
+            }
           }
-        }
+        },
+        "required": [
+          "role",
+          "content"
+        ]
+      },
+      "ChatCompletionRequest": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "ID of the model to use"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "description": "A list of messages comprising the conversation so far"
+          },
+          "temperature": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2,
+            "description": "What sampling temperature to use, between 0 and 2"
+          },
+          "top_p": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "An alternative to sampling with temperature"
+          },
+          "n": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How many chat completion choices to generate for each input message"
+          },
+          "stream": {
+            "type": "boolean",
+            "description": "If set, partial message deltas will be sent"
+          },
+          "stop": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 4
+              }
+            ],
+            "description": "Up to 4 sequences where the API will stop generating further tokens"
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "The maximum number of tokens to generate in the chat completion"
+          },
+          "presence_penalty": {
+            "type": "number",
+            "minimum": -2,
+            "maximum": 2,
+            "description": "Number between -2.0 and 2.0"
+          },
+          "frequency_penalty": {
+            "type": "number",
+            "minimum": -2,
+            "maximum": 2,
+            "description": "Number between -2.0 and 2.0"
+          },
+          "logit_bias": {
+            "type": "object",
+            "description": "Modify the likelihood of specified tokens appearing in the completion"
+          },
+          "user": {
+            "type": "string",
+            "description": "A unique identifier representing your end-user"
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["function"]
+                },
+                "function": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "parameters": {
+                      "type": "object"
+                    }
+                  },
+                  "required": ["name"]
+                }
+              },
+              "required": ["type", "function"]
+            }
+          },
+          "tool_choice": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": ["none", "auto"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["function"]
+                  },
+                  "function": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["name"]
+                  }
+                },
+                "required": ["type", "function"]
+              }
+            ]
+          }
+        },
+        "required": [
+          "model",
+          "messages"
+        ]
+      },
+      "ChatCompletionChoice": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "description": "The index of the choice in the list of choices"
+          },
+          "message": {
+            "$ref": "#/components/schemas/ChatMessage"
+          },
+          "finish_reason": {
+            "type": "string",
+            "enum": ["stop", "length", "tool_calls", "content_filter", "function_call"],
+            "description": "The reason the model stopped generating tokens"
+          }
+        },
+        "required": [
+          "index",
+          "message",
+          "finish_reason"
+        ]
+      },
+      "ChatCompletionUsage": {
+        "type": "object",
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer",
+            "description": "Number of tokens in the prompt"
+          },
+          "completion_tokens": {
+            "type": "integer",
+            "description": "Number of tokens in the generated completion"
+          },
+          "total_tokens": {
+            "type": "integer",
+            "description": "Total number of tokens used in the request"
+          }
+        },
+        "required": [
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens"
+        ]
+      },
+      "ChatCompletionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier for the chat completion"
+          },
+          "object": {
+            "type": "string",
+            "enum": ["chat.completion"],
+            "description": "The object type, which is always 'chat.completion'"
+          },
+          "created": {
+            "type": "integer",
+            "description": "The Unix timestamp (in seconds) of when the chat completion was created"
+          },
+          "model": {
+            "type": "string",
+            "description": "The model used for the chat completion"
+          },
+          "system_fingerprint": {
+            "type": "string",
+            "description": "This fingerprint represents the backend configuration that the model runs with"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatCompletionChoice"
+            },
+            "description": "A list of chat completion choices"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/ChatCompletionUsage"
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "created",
+          "model",
+          "choices",
+          "usage"
+        ]
       }
     }
   }
