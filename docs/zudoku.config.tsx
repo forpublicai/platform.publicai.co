@@ -28,7 +28,12 @@ const config: ZudokuConfig = {
               type: "doc",
               file: "example",
               label: "Quick Start Guide",
-            }
+            },
+            {
+              type: "doc",
+              file: "inference-partners-faq",
+              label: "Inference Partners FAQ",
+            },
           ],
         },
         {
@@ -39,18 +44,33 @@ const config: ZudokuConfig = {
           items: [
             {
               type: "link",
+              label: "Public AI Website",
+              to: "https://publicai.co",
+            },
+            {
+              type: "link",
+              label: "Public AI Chat",
+              to: "https://chat.publicai.co/",
+            },
+            {
+              type: "link",
               label: "GitHub",
-              to: "https://github.com/publicai",
+              to: "https://github.com/forpublicai",
             },
             {
               type: "link",
               label: "Swiss AI",
-              to: "https://www.swissai.cscs.ch",
+              to: "https://huggingface.co/swiss-ai",
             },
             {
-              type: "doc",
-              file: "inference-partners-faq",
-              label: "Inference Partners FAQ",
+              type: "link",
+              label: "Terms & Privacy",
+              to: "https://publicai.co/tc",
+            },
+            {
+              type: "link",
+              label: "Get Involved",
+              to: "https://publicai.co/contributing",
             },
           ],
         },

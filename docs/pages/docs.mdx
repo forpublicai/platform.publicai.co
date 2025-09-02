@@ -1,8 +1,8 @@
-# Getting Started with Public AI Gateway
+# Getting Started with the Public AI Gateway
 
 Welcome to the Public AI Gateway! This guide will help you get started with accessing open-source AI models through our unified API.
 
-## What is Public AI Gateway?
+## What is the Public AI Gateway?
 
 Public AI Gateway is a unified access point for multiple public AI models and inference providers. We handle load balancing, traffic routing, and failover across our network of partners to ensure reliable access to open-source AI infrastructure.
 
@@ -31,7 +31,7 @@ curl -X POST https://api.publicai.company/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "model": "apertus-70b",
+    "model": "apertus-70b-instruct",
     "messages": [
       {
         "role": "user",
@@ -40,23 +40,10 @@ curl -X POST https://api.publicai.company/v1/chat/completions \
     ]
   }'
 ```
-
-### 3. Explore the API
-
-Use the API Playground below to test different endpoints and see responses in real-time.
-
-<OpenPlaygroundButton
-  server="https://api.publicai.company"
-  url="/v1/chat/completions"
-  method="POST"
->
-  API Playground: Test Chat Completions
-</OpenPlaygroundButton>
-
 ## Available Models
 
 ### Swiss AI Apertus
-- **Model ID:** `apertus-70b`
+- **Model ID:** `apertus-70b-instruct`
 - **Parameters:** 70 billion
 - **License:** Apache 2.0
 - **Training:** 15T tokens across 1,000+ languages
@@ -73,8 +60,7 @@ Authorization: Bearer YOUR_API_KEY
 ## Rate Limits
 
 To ensure fair usage across all users:
-- **Free Tier:** 100 requests per minute
-- **During Swiss AI Weeks:** Enhanced limits for registered users
+- **During Swiss AI Weeks:** 20 requests per minute
 
 ## Support
 
