@@ -1,20 +1,6 @@
 import { ZuploContext, ZuploRequest, environment } from "@zuplo/runtime";
+import { BedrockRuntimeClient, ApplyGuardrailCommand } from "@aws-sdk/client-bedrock-runtime";
 
-interface GuardrailRequest {
-  source: "INPUT" | "OUTPUT";
-  content: Array<{
-    text: {
-      text: string;
-    };
-  }>;
-}
-
-interface GuardrailResponse {
-  action: "NONE" | "GUARDRAIL_INTERVENED";
-  outputs: Array<{
-    text: string;
-  }>;
-}
 
 interface ChatMessage {
   role: string;
@@ -45,45 +31,32 @@ async function checkGuardrail(content: string, context: ZuploContext): Promise<b
     throw new Error("AWS credentials not configured");
   }
 
-  const requestBody: GuardrailRequest = {
-    source: "INPUT",
-    content: [
-      {
-        text: {
-          text: content
-        }
-      }
-    ]
-  };
-
-  const endpoint = `https://bedrock-runtime.${awsRegion}.amazonaws.com/guardrail/${guardrailId}/version/${guardrailVersion}/apply`;
-
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '');
-
-  const headers = {
-    "Content-Type": "application/json",
-    "X-Amz-Date": amzDate,
-    "Authorization": `AWS4-HMAC-SHA256 Credential=${awsAccessKeyId}/${amzDate.substr(0, 8)}/${awsRegion}/bedrock/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=placeholder`
-  };
+  const client = new BedrockRuntimeClient({
+    region: awsRegion,
+    credentials: {
+      accessKeyId: awsAccessKeyId,
+      secretAccessKey: awsSecretAccessKey,
+    },
+  });
 
   try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(requestBody)
+    const command = new ApplyGuardrailCommand({
+      guardrailIdentifier: guardrailId,
+      guardrailVersion: guardrailVersion,
+      source: "INPUT",
+      content: [
+        {
+          text: {
+            text: content
+          }
+        }
+      ]
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      context.log.error(`Guardrail API error: ${response.status} - ${errorText}`);
-      throw new Error(`Guardrail API error: ${response.status}`);
-    }
-
-    const result = await response.json() as GuardrailResponse;
-    context.log.info(`Guardrail result: ${result.action}`);
+    const response = await client.send(command);
+    context.log.info(`Guardrail result: ${response.action}`);
     
-    return result.action === "NONE";
+    return response.action === "NONE";
   } catch (error) {
     context.log.error(`Error calling guardrail API: ${error}`);
     throw error;
