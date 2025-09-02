@@ -14,7 +14,7 @@ export function getUserIdentifier(request: ZuploRequest, context: ZuploContext):
   
   // Developer API key rate limiting
   if (apiKey) {
-    context.log.info(`Rate limiting by API key: ${apiKey.substring(0, 8)}...`);
+    context.log.info(`Rate limiting by the API key: ${apiKey.substring(0, 8)}...`);
     
     return {
       key: `api-key:${apiKey}`,
