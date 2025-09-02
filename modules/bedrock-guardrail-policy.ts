@@ -107,7 +107,12 @@ function extractTextFromMessages(messages: ChatMessage[]): string {
     .join(' ');
 }
 
-export default async function (request: ZuploRequest, context: ZuploContext, policyName: string) {
+export default async function (
+  request: ZuploRequest,
+  context: ZuploContext,
+  options: any,
+  policyName: string
+): Promise<ZuploRequest | Response> {
   try {
     const body = await request.json() as ChatCompletionRequest;
     
