@@ -26,7 +26,7 @@ const config: ZudokuConfig = {
           items: [
             {
               type: "doc",
-              file: "example",
+              file: "docs",
               label: "Quick Start Guide",
             },
             {
@@ -82,7 +82,7 @@ const config: ZudokuConfig = {
       label: "API Reference",
     },
   ],
-  redirects: [{ from: "/", to: "/example" }],
+  redirects: [{ from: "/", to: "/docs" }],
   apis: [
     {
       type: "file",
