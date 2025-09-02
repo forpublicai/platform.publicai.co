@@ -1,5 +1,4 @@
 import { ZuploContext, ZuploRequest, environment } from "@zuplo/runtime";
-import { BedrockRuntimeClient, ApplyGuardrailCommand } from "@aws-sdk/client-bedrock-runtime";
 
 
 interface ChatMessage {
@@ -11,6 +10,78 @@ interface ChatCompletionRequest {
   model: string;
   messages: ChatMessage[];
   [key: string]: any;
+}
+
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function hmacSha256(key: ArrayBuffer, message: string): Promise<ArrayBuffer> {
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const msgBuffer = new TextEncoder().encode(message);
+  return await crypto.subtle.sign('HMAC', cryptoKey, msgBuffer);
+}
+
+async function getSignatureKey(key: string, dateStamp: string, regionName: string, serviceName: string): Promise<ArrayBuffer> {
+  const kDate = await hmacSha256(new TextEncoder().encode("AWS4" + key), dateStamp);
+  const kRegion = await hmacSha256(kDate, regionName);
+  const kService = await hmacSha256(kRegion, serviceName);
+  const kSigning = await hmacSha256(kService, "aws4_request");
+  return kSigning;
+}
+
+function toHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function signV4(method: string, url: string, headers: Record<string, string>, payload: string, accessKeyId: string, secretAccessKey: string, region: string, service: string): Promise<Record<string, string>> {
+  const urlObj = new URL(url);
+  const host = urlObj.hostname;
+  const uri = urlObj.pathname;
+  
+  const now = new Date();
+  const amzdate = now.toISOString().replace(/[:\-]|\.\d{3}/g, '');
+  const datestamp = amzdate.substr(0, 8);
+  
+  headers['Host'] = host;
+  headers['X-Amz-Date'] = amzdate;
+  
+  const signedHeaders = Object.keys(headers)
+    .map(k => k.toLowerCase())
+    .sort()
+    .join(';');
+  
+  const canonicalHeaders = Object.keys(headers)
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+    .map(k => `${k.toLowerCase()}:${headers[k]}\n`)
+    .join('');
+  
+  const payloadHash = await sha256(payload);
+  
+  const canonicalRequest = [
+    method, uri, '', canonicalHeaders, signedHeaders, payloadHash
+  ].join('\n');
+  
+  const algorithm = 'AWS4-HMAC-SHA256';
+  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
+  const stringToSign = [
+    algorithm, amzdate, credentialScope, await sha256(canonicalRequest)
+  ].join('\n');
+  
+  const signingKey = await getSignatureKey(secretAccessKey, datestamp, region, service);
+  const signature = toHex(await hmacSha256(signingKey, stringToSign));
+  
+  headers['Authorization'] = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  
+  return headers;
 }
 
 async function checkGuardrail(content: string, context: ZuploContext): Promise<boolean> {
@@ -31,32 +102,36 @@ async function checkGuardrail(content: string, context: ZuploContext): Promise<b
     throw new Error("AWS credentials not configured");
   }
 
-  const client = new BedrockRuntimeClient({
-    region: awsRegion,
-    credentials: {
-      accessKeyId: awsAccessKeyId,
-      secretAccessKey: awsSecretAccessKey,
-    },
+  const endpoint = `https://bedrock-runtime.${awsRegion}.amazonaws.com/guardrail/${guardrailId}/version/${guardrailVersion}/apply`;
+  const payload = JSON.stringify({
+    source: "INPUT",
+    content: [{
+      text: { text: content }
+    }]
   });
 
   try {
-    const command = new ApplyGuardrailCommand({
-      guardrailIdentifier: guardrailId,
-      guardrailVersion: guardrailVersion,
-      source: "INPUT",
-      content: [
-        {
-          text: {
-            text: content
-          }
-        }
-      ]
+    const headers = await signV4(
+      'POST', endpoint, { 'Content-Type': 'application/json' }, payload,
+      awsAccessKeyId, awsSecretAccessKey, awsRegion, 'bedrock'
+    );
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: payload
     });
 
-    const response = await client.send(command);
-    context.log.info(`Guardrail result: ${response.action}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      context.log.error(`Guardrail API error: ${response.status} - ${errorText}`);
+      throw new Error(`Guardrail API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    context.log.info(`Guardrail result: ${result.action}`);
     
-    return response.action === "NONE";
+    return result.action === "NONE";
   } catch (error) {
     context.log.error(`Error calling guardrail API: ${error}`);
     throw error;
