@@ -93,7 +93,7 @@ async function checkGuardrail(content: string, context: ZuploContext): Promise<b
     return true;
   }
 
-  const awsRegion = "eu-central-2";
+  const awsRegion = "eu-central-1";
   const awsAccessKeyId = environment.AWS_ACCESS_KEY_ID;
   const awsSecretAccessKey = environment.AWS_SECRET_ACCESS_KEY;
 
