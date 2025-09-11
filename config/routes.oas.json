@@ -134,7 +134,9 @@
             "module": "$import(./modules/billing-handler)"
           },
           "policies": {
-            "inbound": []
+            "inbound": [
+              "api-key-inbound"
+            ]
           }
         },
         "operationId": "billing-endpoint",
