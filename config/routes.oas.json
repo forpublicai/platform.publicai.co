@@ -61,6 +61,15 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChatCompletionRequest"
+              },
+              "example": {
+                "model": "swiss-ai/apertus-8b-instruct",
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "Hello! Can you help me understand open-source AI?"
+                  }
+                ]
               }
             }
           }
