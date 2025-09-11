@@ -97,6 +97,48 @@
         },
         "operationId": "7b9f73aa-21c3-4ab1-9b81-51c2d3aaf5eb"
       }
+    },
+    "/billing": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Get billing information for request IDs",
+        "description": "Returns cost information for the provided request IDs",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BillingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "none",
+          "handler": {
+            "export": "billingHandler",
+            "module": "$import(./modules/billing-handler)"
+          },
+          "policies": {
+            "inbound": []
+          }
+        },
+        "operationId": "billing-endpoint"
+      }
     }
   },
   "components": {
@@ -458,6 +500,54 @@
           "model",
           "choices",
           "usage"
+        ]
+      },
+      "BillingRequest": {
+        "type": "object",
+        "properties": {
+          "requestIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of request IDs to get billing information for"
+          }
+        },
+        "required": [
+          "requestIds"
+        ]
+      },
+      "BillingRequestItem": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "description": "The request ID"
+          },
+          "costNanoUsd": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Cost in nano-USD (10^-9 USD)"
+          }
+        },
+        "required": [
+          "requestId",
+          "costNanoUsd"
+        ]
+      },
+      "BillingResponse": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillingRequestItem"
+            },
+            "description": "Array of billing information for each request"
+          }
+        },
+        "required": [
+          "requests"
         ]
       }
     }
