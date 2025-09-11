@@ -134,10 +134,13 @@
             "module": "$import(./modules/billing-handler)"
           },
           "policies": {
-            "inbound": []
+            "inbound": [
+              "api-key-inbound"
+            ]
           }
         },
-        "operationId": "billing-endpoint"
+        "operationId": "billing-endpoint",
+        "x-internal": true
       }
     }
   },
@@ -152,7 +155,9 @@
           },
           "object": {
             "type": "string",
-            "enum": ["model"],
+            "enum": [
+              "model"
+            ],
             "description": "The object type, which is always 'model'"
           },
           "created": {
@@ -176,7 +181,9 @@
         "properties": {
           "object": {
             "type": "string",
-            "enum": ["list"],
+            "enum": [
+              "list"
+            ],
             "description": "The object type, which is always 'list'"
           },
           "data": {
@@ -197,7 +204,12 @@
         "properties": {
           "role": {
             "type": "string",
-            "enum": ["system", "user", "assistant", "tool"],
+            "enum": [
+              "system",
+              "user",
+              "assistant",
+              "tool"
+            ],
             "description": "The role of the message author"
           },
           "content": {
@@ -212,7 +224,10 @@
                   "properties": {
                     "type": {
                       "type": "string",
-                      "enum": ["text", "image_url"]
+                      "enum": [
+                        "text",
+                        "image_url"
+                      ]
                     },
                     "text": {
                       "type": "string"
@@ -225,13 +240,21 @@
                         },
                         "detail": {
                           "type": "string",
-                          "enum": ["auto", "low", "high"]
+                          "enum": [
+                            "auto",
+                            "low",
+                            "high"
+                          ]
                         }
                       },
-                      "required": ["url"]
+                      "required": [
+                        "url"
+                      ]
                     }
                   },
-                  "required": ["type"]
+                  "required": [
+                    "type"
+                  ]
                 }
               }
             ],
@@ -255,7 +278,9 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["function"]
+                  "enum": [
+                    "function"
+                  ]
                 },
                 "function": {
                   "type": "object",
@@ -267,10 +292,17 @@
                       "type": "string"
                     }
                   },
-                  "required": ["name", "arguments"]
+                  "required": [
+                    "name",
+                    "arguments"
+                  ]
                 }
               },
-              "required": ["id", "type", "function"]
+              "required": [
+                "id",
+                "type",
+                "function"
+              ]
             }
           }
         },
@@ -360,7 +392,9 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["function"]
+                  "enum": [
+                    "function"
+                  ]
                 },
                 "function": {
                   "type": "object",
@@ -375,24 +409,34 @@
                       "type": "object"
                     }
                   },
-                  "required": ["name"]
+                  "required": [
+                    "name"
+                  ]
                 }
               },
-              "required": ["type", "function"]
+              "required": [
+                "type",
+                "function"
+              ]
             }
           },
           "tool_choice": {
             "oneOf": [
               {
                 "type": "string",
-                "enum": ["none", "auto"]
+                "enum": [
+                  "none",
+                  "auto"
+                ]
               },
               {
                 "type": "object",
                 "properties": {
                   "type": {
                     "type": "string",
-                    "enum": ["function"]
+                    "enum": [
+                      "function"
+                    ]
                   },
                   "function": {
                     "type": "object",
@@ -401,10 +445,15 @@
                         "type": "string"
                       }
                     },
-                    "required": ["name"]
+                    "required": [
+                      "name"
+                    ]
                   }
                 },
-                "required": ["type", "function"]
+                "required": [
+                  "type",
+                  "function"
+                ]
               }
             ]
           }
@@ -426,7 +475,13 @@
           },
           "finish_reason": {
             "type": "string",
-            "enum": ["stop", "length", "tool_calls", "content_filter", "function_call"],
+            "enum": [
+              "stop",
+              "length",
+              "tool_calls",
+              "content_filter",
+              "function_call"
+            ],
             "description": "The reason the model stopped generating tokens"
           }
         },
@@ -467,7 +522,9 @@
           },
           "object": {
             "type": "string",
-            "enum": ["chat.completion"],
+            "enum": [
+              "chat.completion"
+            ],
             "description": "The object type, which is always 'chat.completion'"
           },
           "created": {
