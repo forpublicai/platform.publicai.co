@@ -4,7 +4,29 @@
 2. **Create API Key**: Go to [API Keys](/settings/api-keys) and click _Create API Key_
 3. **Generate**: Enter a name, set expiration, and click _Generate Key_
 
-### 2. Making Your First Request
+### 2. Explore Available Models
+
+Want to see what other models are available? You can list all models using:
+
+```bash
+curl -X GET https://api.publicai.co/v1/models \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0"
+```
+
+**Or try it interactively:**
+
+<OpenPlaygroundButton
+  server="https://api.publicai.co/"
+  url="/v1/models"
+  method="GET"
+  headers={[
+    { name: "Authorization", defaultValue: "Bearer YOUR_API_KEY_HERE" },
+    { name: "User-Agent", defaultValue: "MyApp/1.0" }
+  ]}
+/>
+
+### 3. Making Your First Request
 
 Once you have an API key, you can start making requests to our AI models. Here's a simple example:
 
@@ -35,7 +57,7 @@ curl -X POST https://api.publicai.co/v1/chat/completions \
     { name: "User-Agent", defaultValue: "MyApp/1.0" },
     { name: "Content-Type", defaultValue: "application/json" }
   ]}
-  body={{
+  body={JSON.stringify({
     model: "swiss-ai/apertus-8b-instruct",
     messages: [
       {
@@ -43,28 +65,7 @@ curl -X POST https://api.publicai.co/v1/chat/completions \
         content: "Hello! Can you help me understand open-source AI?"
       }
     ]
-  }}
-/>
-### 3. Explore Available Models
-
-Want to see what other models are available? You can list all models using:
-
-```bash
-curl -X GET https://api.publicai.co/v1/models \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "User-Agent: MyApp/1.0"
-```
-
-**Or try it interactively:**
-
-<OpenPlaygroundButton
-  server="https://api.publicai.co/"
-  url="/v1/models"
-  method="GET"
-  headers={[
-    { name: "Authorization", defaultValue: "Bearer YOUR_API_KEY_HERE" },
-    { name: "User-Agent", defaultValue: "MyApp/1.0" }
-  ]}
+  })}
 />
 
 ## Authentication
