@@ -88,29 +88,17 @@ const config: ZudokuConfig = {
       type: "file",
       input: "../config/routes.oas.json",
       path: "api",
+      options: {
+        disablePlayground: true, // Disable the interactive API playground
+      },
     },
   ],
   authentication: {
-    // IMPORTANT: This is a demo Auth0 configuration.
-    // In a real application, you should replace these values with your own
-    // identity provider's configuration.
-    // This configuration WILL NOT WORK with custom domains.
-    // For more information, see:
-    // https://zuplo.com/docs/dev-portal/zudoku/configuration/authentication
     type: "auth0",
     domain: "login.publicai.co",
     clientId: "GsHpOedTKzJpnKlQIIeXDBKjssyOmOsj",
     audience: "https://docs.publicai.company/api",
   },
-  // authentication: {
-  //   type: "supabase",
-  //   provider: "google", // or any supported provider
-  //   supabaseUrl: "https://gyokusiqtjaeofzkkkkd.supabase.co",
-  //   supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5b2t1c2lxdGphZW9memtra2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNDcxNzcsImV4cCI6MjA3MDgyMzE3N30.4uxPtnWPAX8_0E8_q45ZfEWzQZ0ZKoiwwyeQYKXrkwQ",
-  //   redirectToAfterSignUp: "/",
-  //   redirectToAfterSignIn: "/",
-  //   redirectToAfterSignOut: "/",
-  // },
   apiKeys: {
     enabled: true,
     deploymentName: process.env.ZUPLO_PUBLIC_DEPLOYMENT_NAME, // Note: Only required for local development
