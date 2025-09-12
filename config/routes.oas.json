@@ -16,7 +16,19 @@
       },
       "get": {
         "summary": "Lists the currently available models",
-        "description": "",
+        "description": "Returns a list of all available models that can be used with the chat completions endpoint.",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User-Agent header identifying the client application",
+            "example": "MyApp/1.0"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -24,6 +36,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ModelListResponse"
+                },
+                "example": {
+                  "object": "list",
+                  "data": [
+                    {
+                      "id": "swiss-ai/apertus-8b-instruct",
+                      "object": "model",
+                      "created": 1677610602,
+                      "owned_by": "openai"
+                    }
+                  ]
                 }
               }
             }
@@ -54,7 +77,19 @@
       },
       "post": {
         "summary": "Creates a model response for the given chat conversation",
-        "description": "",
+        "description": "Creates a completion for the chat message",
+        "parameters": [
+          {
+            "name": "User-Agent",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User-Agent header identifying the client application",
+            "example": "MyApp/1.0"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -72,6 +107,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChatCompletionResponse"
+                },
+                "example": {
+                  "id": "chatcmpl-6d5e4c0fba54aec4b099fc524c13247a",
+                  "object": "chat.completion",
+                  "created": 1757652946,
+                  "model": "swiss-ai/Apertus-8B-Instruct-2509",
+                  "choices": [
+                    {
+                      "index": 0,
+                      "message": {
+                        "role": "assistant",
+                        "content": "Hello! I'm Apertus, your AI assistant. How can I assist you today?"
+                      },
+                      "finish_reason": "stop"
+                    }
+                  ],
+                  "usage": {
+                    "prompt_tokens": 63,
+                    "completion_tokens": 19,
+                    "total_tokens": 82
+                  }
                 }
               }
             }
@@ -106,22 +162,26 @@
         "properties": {
           "id": {
             "type": "string",
-            "description": "The model identifier"
+            "description": "The model identifier",
+            "example": "swiss-ai/apertus-8b-instruct"
           },
           "object": {
             "type": "string",
             "enum": [
               "model"
             ],
-            "description": "The object type, which is always 'model'"
+            "description": "The object type, which is always 'model'",
+            "example": "model"
           },
           "created": {
             "type": "integer",
-            "description": "The Unix timestamp (in seconds) when the model was created"
+            "description": "The Unix timestamp (in seconds) when the model was created",
+            "example": 1677610602
           },
           "owned_by": {
             "type": "string",
-            "description": "The organization that owns the model"
+            "description": "The organization that owns the model",
+            "example": "openai"
           }
         },
         "required": [
@@ -139,7 +199,8 @@
             "enum": [
               "list"
             ],
-            "description": "The object type, which is always 'list'"
+            "description": "The object type, which is always 'list'",
+            "example": "list"
           },
           "data": {
             "type": "array",
@@ -264,7 +325,11 @@
         "required": [
           "role",
           "content"
-        ]
+        ],
+        "example": {
+          "role": "user",
+          "content": "Hello!"
+        }
       },
       "ChatCompletionRequest": {
         "type": "object",
@@ -416,7 +481,16 @@
         "required": [
           "model",
           "messages"
-        ]
+        ],
+        "example": {
+          "model": "swiss-ai/apertus-8b-instruct",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Hello!"
+            }
+          ]
+        }
       },
       "ChatCompletionChoice": {
         "type": "object",
@@ -444,7 +518,15 @@
           "index",
           "message",
           "finish_reason"
-        ]
+        ],
+        "example": {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Hello! I'm Apertus, your AI assistant. How can I assist you today?"
+          },
+          "finish_reason": "stop"
+        }
       },
       "ChatCompletionUsage": {
         "type": "object",
@@ -466,7 +548,12 @@
           "prompt_tokens",
           "completion_tokens",
           "total_tokens"
-        ]
+        ],
+        "example": {
+          "prompt_tokens": 63,
+          "completion_tokens": 19,
+          "total_tokens": 82
+        }
       },
       "ChatCompletionResponse": {
         "type": "object",
@@ -512,7 +599,28 @@
           "model",
           "choices",
           "usage"
-        ]
+        ],
+        "example": {
+          "id": "chatcmpl-6d5e4c0fba54aec4b099fc524c13247a",
+          "object": "chat.completion",
+          "created": 1757652946,
+          "model": "swiss-ai/Apertus-8B-Instruct-2509",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "Hello! I'm Apertus, your AI assistant. How can I assist you today?"
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 63,
+            "completion_tokens": 19,
+            "total_tokens": 82
+          }
+        }
       }
     }
   }
