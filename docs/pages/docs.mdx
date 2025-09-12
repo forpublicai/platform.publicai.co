@@ -1,27 +1,8 @@
-# Getting Started with the Public AI Gateway
+### 1. Get Your API Key
 
-Welcome to the Public AI Gateway! This guide will help you get started with accessing open-source AI models through our unified API.
-
-## What is the Public AI Gateway?
-
-Public AI Gateway is a unified access point for multiple public AI models and inference providers. We handle load balancing, traffic routing, and failover across our network of partners to ensure reliable access to open-source AI infrastructure.
-
-## Quick Start
-
-### 1. Create an Account
-
-To get started, you'll need to create an account and obtain an API key.
-
-<Stepper>
-1. Click on the _Login_ button on the top right of this portal
-2. Sign up using single sign on 
-3. After sign up, either:
-  - Option A: Go to the [API keys page](/settings/api-keys)
-  - Option B: Click on your name to reveal the dropdown menu and click on _API Keys_
-4. Click _Create API Key_
-5. Enter a name for your API Key and select an expiration time
-6. Click _Generate Key_
-</Stepper>
+1. **Sign up**: Click _Login_ in the top right and sign up using single sign-on
+2. **Create API Key**: Go to [API Keys](/settings/api-keys) and click _Create API Key_
+3. **Generate**: Enter a name, set expiration, and click _Generate Key_
 
 ### 2. Making Your First Request
 
@@ -31,8 +12,9 @@ Once you have an API key, you can start making requests to our AI models. Here's
 curl -X POST https://api.publicai.co/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0" \
   -d '{
-    "model": "swiss-ai/apertus-70b-instruct",
+    "model": "swiss-ai/apertus-8b-instruct",
     "messages": [
       {
         "role": "user",
@@ -41,22 +23,63 @@ curl -X POST https://api.publicai.co/v1/chat/completions \
     ]
   }'
 ```
-## Available Models
 
-### Swiss AI Apertus
-- **Model ID:** `apertus-70b-instruct`
-- **Parameters:** 70 billion
-- **License:** Apache 2.0
-- **Training:** 15T tokens across 1,000+ languages
-- **Availability:** Free during Swiss AI Weeks (September 2025)
+**Or try it interactively:**
+
+<OpenPlaygroundButton
+  server="https://api.publicai.co/"
+  url="/v1/chat/completions"
+  method="POST"
+  headers={[
+    { name: "Authorization", defaultValue: "Bearer YOUR_API_KEY_HERE" },
+    { name: "User-Agent", defaultValue: "MyApp/1.0" },
+    { name: "Content-Type", defaultValue: "application/json" }
+  ]}
+  body={{
+    model: "swiss-ai/apertus-8b-instruct",
+    messages: [
+      {
+        role: "user",
+        content: "Hello! Can you help me understand open-source AI?"
+      }
+    ]
+  }}
+/>
+### 3. Explore Available Models
+
+Want to see what other models are available? You can list all models using:
+
+```bash
+curl -X GET https://api.publicai.co/v1/models \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0"
+```
+
+**Or try it interactively:**
+
+<OpenPlaygroundButton
+  server="https://api.publicai.co/"
+  url="/v1/models"
+  method="GET"
+  headers={[
+    { name: "Authorization", defaultValue: "Bearer YOUR_API_KEY_HERE" },
+    { name: "User-Agent", defaultValue: "MyApp/1.0" }
+  ]}
+/>
 
 ## Authentication
 
-All API requests require you to authenticate using an API key. Include your key in the Authorization header:
+All API requests require:
 
-```
-Authorization: Bearer YOUR_API_KEY
-```
+1. **API Key**: Include your key in the Authorization header:
+   ```
+   Authorization: Bearer YOUR_API_KEY
+   ```
+
+2. **User-Agent Header**: Specify a User-Agent to prevent bot spamming:
+   ```
+   User-Agent: MyApp/1.0
+   ```
 
 ## Rate Limits
 
