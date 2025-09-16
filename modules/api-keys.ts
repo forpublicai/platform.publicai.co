@@ -19,7 +19,76 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
     );
   }
 
-  // TODO: Currently this creates a new consumer every time a user wants to issue an API key. This can be optimized by reusing existing consumers.
+  // Check whether consumer exists by searching for consumer with email
+  const checkConsumerResponse = await fetch(
+    `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?manager-email=${body.email}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${environment.ZP_DEVELOPER_API_KEY}`,
+      },
+    }
+  );
+  if (!checkConsumerResponse.ok) {
+    return new Response(
+      JSON.stringify({ error: "Failed to check existing consumers" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+  }
+  const existingConsumers = await checkConsumerResponse.json();
+
+  // Consumer Exists - issue API key to the consumer
+  if (existingConsumers.data && existingConsumers.data.length > 0) {
+    const existingConsumer = existingConsumers.data[0];
+    console.log(`Found existing consumer: ${existingConsumer.name} for email: ${body.email}`);
+    
+    const createKeyResponse = await fetch(
+      `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers/${existingConsumer.name}/keys`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${environment.ZP_DEVELOPER_API_KEY}`,
+        },
+        body: JSON.stringify({
+          description: body.description ?? "API Key",
+          // Add expiresOn if provided in body
+          ...(body.expiresOn && { expiresOn: body.expiresOn })
+        }),
+      }
+    );
+
+    if (!createKeyResponse.ok) {
+      return new Response(
+        JSON.stringify({ error: "Failed to create API key for existing consumer" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    const newApiKey = await createKeyResponse.json();
+    console.log(`Created new API key: ${newApiKey.id} for existing consumer: ${existingConsumer.name}`);
+    
+    return new Response(
+      JSON.stringify(newApiKey),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+  }
+
+  
+
+
+  // Consumer does not exist - create new consumer with API key
+  console.log(`No existing consumer found for email: ${body.email}, creating new one`);
   const response = await fetch(
     `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?with-api-key=true`,
     {
