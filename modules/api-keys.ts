@@ -8,6 +8,12 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
   const userClaims = request.user?.data;
   const body = await request.json();
 
+  // Add debugging
+  console.log('Request body:', body);
+  console.log('body.metadata:', body.metadata);
+  console.log('body.metadata?.email:', body.metadata?.email);
+  console.log('User claims:', userClaims);
+
   const response = await fetch(
     `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?with-api-key=true`,
     {
