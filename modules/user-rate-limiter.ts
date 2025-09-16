@@ -8,31 +8,25 @@ interface CustomRateLimitDetails {
 }
 
 export function getUserIdentifier(request: ZuploRequest, context: ZuploContext): CustomRateLimitDetails {
-  context.log.info("=== request.user object ===");
-  context.log.info(JSON.stringify(request.user, null, 2));
+  const consumerSub = request.user?.sub;
+  const plan = request.user?.data?.plan || "free"; // Default to "free" if no plan
   
-  // Get the API key from the request (should be available from the api-key-inbound policy)
-  const apiKey = request.headers.get("authorization")?.replace("Bearer ", "") || 
-                 request.headers.get("x-api-key");
-  
-  // Developer API key rate limiting
-  if (apiKey) {
-    context.log.info(`Rate limiting by the API key: ${apiKey.substring(0, 8)}...`);
+  if (consumerSub) {
+    // Define rate limits per plan
+    const planLimits = {
+      free: { requests: 20, windowMinutes: 1, message: "Free plan: 20 requests/minute limit exceeded" },
+      plus: { requests: 40, windowMinutes: 1, message: "Plus plan: 40 requests/minute limit exceeded" },
+      pro: { requests: 100, windowMinutes: 1, message: "Pro plan: 100 requests/minute limit exceeded" }
+    };
+
+    const limit = planLimits[plan] || planLimits.free;
+    
+    context.log.info(`Rate limiting consumer: ${consumerSub} on ${plan} plan`);
     
     return {
-      key: `api-key:${apiKey}`,
-      requestsAllowed: 20,
-      timeWindowMinutes: 1,
-      rateLimitExceededMessage: "API key rate limit exceeded. You can make 20 requests per minute."
+      key: `consumer:${consumerSub}:${plan}`,
+      requestsAllowed: limit.requests,
+      timeWindowMinutes: limit.windowMinutes,
+      rateLimitExceededMessage: limit.message
     };
-  }
-
-  // No API key found - this should be caught by api-key-inbound policy, but just in case
-  context.log.error("No API key found - applying emergency rate limit");
-  return {
-    key: "no-api-key",
-    requestsAllowed: 1,
-    timeWindowMinutes: 60,
-    rateLimitExceededMessage: "No valid API key provided. Please include your API key in the Authorization header."
-  };
 }
