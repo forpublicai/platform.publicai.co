@@ -8,12 +8,18 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
   const userClaims = request.user?.data;
   const body = await request.json();
 
-  // Add debugging
-  console.log('Request body:', body);
-  console.log('body.metadata:', body.metadata);
-  console.log('body.metadata?.email:', body.metadata?.email);
-  console.log('User claims:', userClaims);
+  // Validate email is present
+  if (!body.email) {
+    return new Response(
+      JSON.stringify({ error: "Email is required" }), 
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      }
+    );
+  }
 
+  // TODO: Currently this creates a new consumer every time a user wants to issue an API key. This can be optimized by reusing existing consumers.
   const response = await fetch(
     `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?with-api-key=true`,
     {
@@ -25,14 +31,16 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
       body: JSON.stringify({
         name: crypto.randomUUID(),
         managers: [
-          { email: body.metadata?.email ?? "nobody@example.com", sub: sub },
+          { email: body.email, sub: sub },
         ],
         description: body.description ?? "API Key",
         tags: {
           sub: sub,
-          email: body.metadata?.email,
+          email: body.email,
         },
-        metadata: {},
+        metadata: {
+          plan: "free"
+        },
       }),
     }
   );
