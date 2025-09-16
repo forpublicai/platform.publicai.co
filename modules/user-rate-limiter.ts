@@ -29,4 +29,14 @@ export function getUserIdentifier(request: ZuploRequest, context: ZuploContext):
       timeWindowMinutes: limit.windowMinutes,
       rateLimitExceededMessage: limit.message
     };
+  }
+
+    // Final fallback: No consumer key found
+  context.log.error("No consumer key found - applying emergency rate limit");
+  return {
+    key: "no-auth",
+    requestsAllowed: 1,
+    timeWindowMinutes: 60,
+    rateLimitExceededMessage: "No valid authentication provided. Please include your API key in the Authorization header."
+  };
 }
