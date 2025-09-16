@@ -8,6 +8,13 @@ interface CustomRateLimitDetails {
 }
 
 export function getUserIdentifier(request: ZuploRequest, context: ZuploContext): CustomRateLimitDetails {
+  // Debug logging
+  context.log.info("=== Full ZuploRequest ===");
+  context.log.info(JSON.stringify(request, null, 2));
+  
+  context.log.info("=== Full ZuploContext ===");
+  context.log.info(JSON.stringify(context, null, 2));
+  
   // Get the API key from the request (should be available from the api-key-inbound policy)
   const apiKey = request.headers.get("authorization")?.replace("Bearer ", "") || 
                  request.headers.get("x-api-key");
