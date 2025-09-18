@@ -129,8 +129,8 @@ async function checkGuardrail(content: string, context: ZuploContext): Promise<b
     }
 
     const result = await response.json();
-    context.log.info(`Guardrail result: ${result.action}`);
-    
+    context.log.info(`Guardrail result: ${result.action} (${result.action === "NONE" ? "PASSED" : "BLOCKED"})`);
+
     return result.action === "NONE";
   } catch (error) {
     context.log.error(`Error calling guardrail API: ${error}`);
@@ -163,9 +163,15 @@ export default async function (
 ): Promise<ZuploRequest | Response> {
   try {
     const body = await request.json() as ChatCompletionRequest;
-    
+
+    // Validate basic request structure - let LiteLLM handle detailed validation
+    if (!body.messages || !Array.isArray(body.messages)) {
+      context.log.info("Invalid or missing messages array, skipping guardrail check");
+      return request;
+    }
+
     const messageText = extractTextFromMessages(body.messages);
-    
+
     if (messageText.trim().length === 0) {
       context.log.info("No text content found in messages, skipping guardrail check");
       return request;
@@ -200,6 +206,14 @@ export default async function (
     
   } catch (error) {
     context.log.error(`Error in guardrail policy: ${error}`);
+
+    // If it's a JSON parsing error (malformed request), let LiteLLM handle it
+    if (error instanceof SyntaxError) {
+      context.log.info("JSON parsing error, passing through to LiteLLM for proper error handling");
+      return request;
+    }
+
+    // For other errors (AWS/Guardrail issues), return 500
     return new Response(
       JSON.stringify({
         error: {
