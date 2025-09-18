@@ -196,13 +196,9 @@ export default async function (
       );
     }
     
-    const newRequest = new Request(request.url, {
-      method: request.method,
-      headers: request.headers,
-      body: JSON.stringify(body)
-    });
-    
-    return newRequest;
+    // Return the original request since we've already consumed the body
+    // The URL forward handler will use the original request
+    return request;
     
   } catch (error) {
     context.log.error(`Error in guardrail policy: ${error}`);
