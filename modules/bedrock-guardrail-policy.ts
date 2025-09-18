@@ -162,7 +162,9 @@ export default async function (
   policyName: string
 ): Promise<ZuploRequest | Response> {
   try {
-    const body = await request.json() as ChatCompletionRequest;
+    // Clone the request before reading the body to avoid "used body" error
+    const requestClone = request.clone();
+    const body = await requestClone.json() as ChatCompletionRequest;
 
     // Validate basic request structure - let LiteLLM handle detailed validation
     if (!body.messages || !Array.isArray(body.messages)) {
