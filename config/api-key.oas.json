@@ -25,7 +25,7 @@
             ]
           }
         },
-        "operationId": "ebb70a71-c223-4980-a261-f51f21233224",
+        "operationId": "api-key-endpoint",
         "x-internal": true
       }
     },
@@ -59,7 +59,7 @@
           }
         },
         "x-zuplo-route": {
-          "corsPolicy": "none",
+          "corsPolicy": "anything-goes",
           "handler": {
             "export": "billingHandler",
             "module": "$import(./modules/billing-handler)"
@@ -71,6 +71,28 @@
           }
         },
         "operationId": "billing-endpoint",
+        "x-internal": true
+      }
+    },
+    "/v1/developer/upgrade-plan": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Upgrade a given users plan",
+        "description": "",
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/upgrade-plan-handler)",
+            "options": {}
+          },
+          "policies": {
+            "inbound": []
+          }
+        },
+        "operationId": "upgrade-plan-endpoint",
         "x-internal": true
       }
     }
