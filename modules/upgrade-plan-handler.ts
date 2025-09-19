@@ -173,7 +173,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
       },
       body: JSON.stringify({
         metadata: {
-          plan: "free"
+          plan: "plus"
         }
       }),
     }

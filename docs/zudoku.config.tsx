@@ -81,6 +81,11 @@ const config: ZudokuConfig = {
       to: "/api",
       label: "API Reference",
     },
+    {
+      "type": "doc",
+      "label": "Support Us",
+      "file": "support-us"
+    }
   ],
   redirects: [{ from: "/", to: "/docs" }],
   apis: [
