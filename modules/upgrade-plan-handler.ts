@@ -62,21 +62,21 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
 //     }
 //   }
 // }
-  // 2. Parse the request body to get the users ID (which is the top level id)
+  // 2. Parse the request body to get the member slug
   const body = await request.json();
-  const userId = body.id;
+  const memberSlug = body.data?.member?.memberCollective?.slug;
 
-  if (!userId) {
-    return new Response("Missing user ID in request body", { status: 400 });
+  if (!memberSlug) {
+    return new Response("Missing member slug in request body", { status: 400 });
   }
 
   
-  // 3. Query Opencollective API to get the users email using the user id
+  // 3. Query Opencollective API to get the users email using the member slug
   // https://api.opencollective.com/graphql/v2
   // Pass the Personal Token As an HTTP header: Personal-Token: environment.OPENCOLLECTIVE_PERSONAL_TOKEN
   const ocQuery = `
-    query GetAccount($id: String!) {
-      account(id: $id) {
+    query GetAccount($slug: String!) {
+      account(slug: $slug) {
         email
       }
     }
@@ -90,7 +90,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
     },
     body: JSON.stringify({
       query: ocQuery,
-      variables: { id: userId.toString() },
+      variables: { slug: memberSlug },
     }),
   });
 
