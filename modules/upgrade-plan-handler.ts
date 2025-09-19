@@ -92,7 +92,7 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
   const ocQuery = `
     query GetAccount($slug: String!) {
       account(slug: $slug) {
-        email
+        emails
       }
     }
   `;
@@ -118,7 +118,8 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
   const ocData = await ocResponse.json();
   context.log.info("OpenCollective response:", JSON.stringify(ocData, null, 2));
 
-  const userEmail = ocData.data?.account?.email;
+  const emails = ocData.data?.account?.emails;
+  const userEmail = emails && emails.length > 0 ? emails[0] : null;
   context.log.info("User email extracted:", userEmail);
 
   if (!userEmail) {
