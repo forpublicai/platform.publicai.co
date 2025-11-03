@@ -153,6 +153,32 @@
         },
         "operationId": "7b9f73aa-21c3-4ab1-9b81-51c2d3aaf5eb"
       }
+    },
+    "/v2/chat/completions": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Creates a model response for the given chat conversation",
+        "description": "",
+        "x-zuplo-route": {
+          "corsPolicy": "none",
+          "handler": {
+            "export": "urlForwardHandler",
+            "module": "$import(@zuplo/runtime)",
+            "options": {
+              "baseUrl": "https://api-internal.publicai.co"
+            }
+          },
+          "policies": {
+            "inbound": [
+              "api-key-inbound",
+              "set-litellm-headers"
+            ]
+          }
+        },
+        "operationId": "new-route-12fd1eff"
+      }
     }
   },
   "components": {
