@@ -66,6 +66,14 @@
       },
       "name": "bedrock-guardrail-policy",
       "policyType": "custom-code-inbound"
+    },
+    {
+      "handler": {
+        "export": "default",
+        "module": "$import(./modules/set-litellm-headers)"
+      },
+      "name": "set-litellm-headers",
+      "policyType": "custom-code-inbound"
     }
   ]
 }
