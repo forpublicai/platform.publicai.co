@@ -33,10 +33,10 @@ export default async function (
   
   // Add the user email header
   if (request.user?.data?.email) {
-    newRequest.headers.set("x-user-email", request.user.data.email);
-    context.log.info(`Set x-user-email header to: ${request.user.data.email}`);
+    newRequest.headers.set("x-zuplo-user-email", request.user.data.email);
+    context.log.info(`Set x-zuplo-user-email header to: ${request.user.data.email}`);
   } else {
-    context.log.warn("No user email found, x-user-email header not set");
+    context.log.warn("No user email found, x-zuplo-user-email header not set");
   }
   
   return newRequest;
