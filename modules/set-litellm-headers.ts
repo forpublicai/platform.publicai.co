@@ -4,8 +4,21 @@ export default async function (
   request: ZuploRequest,
   context: ZuploContext
 ) {
-  // Create new request with modified headers
-  const newRequest = new ZuploRequest(request);
+  // Get the incoming body as JSON
+  const body = await request.json();
+  
+  // Add the user ID to the body
+  if (request.user?.sub) {
+    body.user = request.user.sub;
+    context.log.info(`Added user: ${request.user.sub} to request body`);
+  } else {
+    context.log.warn("No user.sub found, user field not added to body");
+  }
+  
+  // Create new request with modified body and headers
+  const newRequest = new ZuploRequest(request, {
+    body: JSON.stringify(body)
+  });
   
   // Set the LiteLLM authorization header
   const litellmApiKey = environment.LITELLM_API_KEY;
@@ -13,12 +26,9 @@ export default async function (
     newRequest.headers.set("Authorization", `Bearer ${litellmApiKey}`);
   }
   
-  // Set the user ID header
+  // Set the user ID header (keeping your existing one)
   if (request.user?.sub) {
     newRequest.headers.set("x-zuplo-user-id", request.user.sub);
-    context.log.info(`Set x-zuplo-user-id header to: ${request.user.sub}`);
-  } else {
-    context.log.warn("No user.sub found, x-zuplo-user-id header not set");
   }
   
   // Add the user email header
