@@ -2,6 +2,12 @@
 
 Welcome to the Public AI Gateway Developer Portal, your access point to open-source AI infrastructure. This portal provides comprehensive documentation and API access for connecting to public AI models and services.
 
+:::info{title="We'd love your feedback!"}
+
+How has your experience using Apertus been? Let us know at https://forms.gle/9TGSfTK1RfKj2b6X9
+
+:::
+
 ## About Public AI
 
 Public AI is both an idea and a movement: that AI should be a form of public infrastructure, built and funded by the public sector. We coordinate the Public AI Network, an open-source community dedicated to making AI accessible, transparent, and publicly beneficial.
