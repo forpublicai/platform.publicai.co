@@ -21,22 +21,18 @@ export default async function (
   });
   
   // Set the LiteLLM authorization header
-  const litellmApiKey = environment.LITELLM_API_KEY;
+  const litellmApiKey = environment.LITELLM_DEVELOPER_API_KEY;
   if (litellmApiKey) {
     newRequest.headers.set("Authorization", `Bearer ${litellmApiKey}`);
   }
-  
-  // Set the user ID header (keeping your existing one)
-  if (request.user?.sub) {
-    newRequest.headers.set("x-zuplo-user-id", request.user.sub);
-  }
-  
+    
   // Add the user email header
   if (request.user?.data?.email) {
     newRequest.headers.set("x-zuplo-user-email", request.user.data.email);
     context.log.info(`Set x-zuplo-user-email header to: ${request.user.data.email}`);
   } else {
     context.log.warn("No user email found, x-zuplo-user-email header not set");
+    context.log.info(`${request.user.data}`)
   }
   
   return newRequest;
