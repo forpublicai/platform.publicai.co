@@ -33,5 +33,9 @@ export default async function (
   } else {
     context.log.warn("No user email found, x-zuplo-user-email header not set");
   }
+
+  // DEBUG: Log the user.data object properly
+  context.log.info(`User data: ${JSON.stringify(request.user?.data)}`);
   
-  // DEBUG: Log the us
+  return newRequest;
+}
