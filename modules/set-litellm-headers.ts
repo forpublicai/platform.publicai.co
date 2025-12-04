@@ -36,8 +36,56 @@ export default async function (
     context.log.info(`Active subscription exists: ${hasActiveSubscription}`);
   }
 
+  // For users with active subscriptions, check wallet balance
+  if (hasActiveSubscription) {
+    const checkWalletResponse = await fetch(
+      `${environment.LAGO_API_BASE}/api/v1/wallets?external_customer_id=${userId}`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    if (checkWalletResponse.ok) {
+      const walletData = await checkWalletResponse.json();
+      
+      if (walletData.wallets && walletData.wallets.length > 0) {
+        const wallet = walletData.wallets[0];
+        const creditsBalance = parseFloat(wallet.credits_ongoing_balance || "0");
+
+        if (creditsBalance <= 0.10) {
+          context.log.warn(`User ${userId} has low wallet balance: $${creditsBalance.toFixed(2)} (≤ $0.10)`);
+          return new Response(
+            JSON.stringify({
+              error: {
+                message: "Insufficient wallet balance. Please add credits to your account.",
+                type: "insufficient_balance",
+                current_balance: creditsBalance.toFixed(2)
+              }
+            }),
+            {
+              status: 402,
+              headers: {
+                "Content-Type": "application/json"
+              }
+            }
+          );
+        } else {
+          context.log.info(`User ${userId} has sufficient wallet balance: $${creditsBalance.toFixed(2)}`);
+        }
+      } else {
+        context.log.warn(`User ${userId} has active subscription but no wallet found`);
+      }
+    } else {
+      const error = await checkWalletResponse.text();
+      context.log.error(`Failed to check wallet balance: ${error}`);
+    }
+  } 
   // Only get consumer details if we need to create customer/subscription
-  if (!hasActiveSubscription) {
+  else {
     const getConsumerResponse = await fetch(
       `https://dev.zuplo.com/v1/accounts/${environment.ZP_ACCOUNT_NAME}/key-buckets/${environment.ZP_API_KEY_SERVICE_BUCKET_NAME}/consumers/${userId}`,
       {
@@ -82,6 +130,35 @@ export default async function (
         context.log.error(`Failed to create Lago customer: ${error}`);
       } else {
         context.log.info(`Created Lago customer: ${userId}`);
+
+        // Create wallet with $10 USD in credits
+        const createWalletResponse = await fetch(
+          `${environment.LAGO_API_BASE}/api/v1/wallets`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              wallet: {
+                external_customer_id: userId,
+                name: "Welcome Credits",
+                rate_amount: "1.0",
+                currency: "USD",
+                granted_credits: "10.0"
+              }
+            })
+          }
+        );
+
+        if (createWalletResponse.ok) {
+          const wallet = await createWalletResponse.json();
+          context.log.info(`Created Lago wallet with $10 credits: ${wallet.wallet?.lago_id}`);
+        } else {
+          const error = await createWalletResponse.text();
+          context.log.error(`Failed to create Lago wallet: ${error}`);
+        }
 
         // Create subscription
         const createSubscriptionResponse = await fetch(
