@@ -119,7 +119,13 @@ export default async function (
             customer: {
               external_id: userId,
               name: userName,
-              email: userEmail || `${userId}@placeholder.com`
+              email: userEmail || `${userId}@placeholder.com`,
+              billing_configuration: {
+                payment_provider: "stripe",
+                payment_provider_code: environment.STRIPE_PAYMENT_PROVIDER_CODE || "stripe_test",
+                sync_with_provider: true,
+                sync: true
+              }
             }
           })
         }
