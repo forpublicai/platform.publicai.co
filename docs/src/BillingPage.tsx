@@ -12,6 +12,7 @@ interface WalletData {
   }>;
   hasPaymentMethod: boolean;
   wallet_transactions: WalletTransaction[];
+  current_usage?: CurrentUsage;
 }
 
 interface WalletTransaction {
@@ -21,6 +22,62 @@ interface WalletTransaction {
   amount: string;
   credit_amount: string;
   created_at: string;
+}
+
+interface CurrentUsage {
+  customer_usage: {
+    from_datetime: string;
+    to_datetime: string;
+    issuing_date: string;
+    currency: string;
+    amount_cents: number;
+    total_amount_cents: number;
+    taxes_amount_cents: number;
+    charges_usage: ChargeUsage[];
+  };
+}
+
+interface ChargeUsage {
+  units: string;
+  events_count: number;
+  amount_cents: number;
+  amount_currency: string;
+  charge: {
+    lago_id: string;
+    charge_model: string;
+  };
+  billable_metric: {
+    name: string;
+    code: string;
+  };
+  groups?: UsageGroup[];
+}
+
+interface UsageGroup {
+  lago_id: string;
+  key: string;
+  value: string;
+  units: string;
+  amount_cents: number;
+  events_count: number;
+  filters?: Array<{
+    id: string;
+    invoice_display_name: string | null;
+    values: Record<string, string[]>;
+    units: string;
+    amount_cents: number;
+    events_count: number;
+  }>;
+}
+
+interface ModelUsage {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  inputCost: number;
+  outputCost: number;
+  totalCost: number;
 }
 
 export const BillingPage = () => {
@@ -38,6 +95,7 @@ export const BillingPage = () => {
   const [topUpSuccess, setTopUpSuccess] = useState(false);
   const [topUpError, setTopUpError] = useState<string | null>(null);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
+  const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
 
   const fetchWalletBalance = async () => {
     if (!auth.isAuthenticated) {
@@ -82,6 +140,57 @@ export const BillingPage = () => {
 
       // Set transactions
       setTransactions(data.wallet_transactions || []);
+
+      // Parse usage data
+      if (data.current_usage?.customer_usage?.charges_usage) {
+        const usageMap = new Map<string, ModelUsage>();
+
+        for (const charge of data.current_usage.customer_usage.charges_usage) {
+          if (charge.groups) {
+            for (const group of charge.groups) {
+              if (group.filters) {
+                for (const filter of group.filters) {
+                  const modelName = filter.values.model?.[0];
+                  const tokenType = filter.values.type?.[0];
+
+                  if (modelName && tokenType) {
+                    if (!usageMap.has(modelName)) {
+                      usageMap.set(modelName, {
+                        model: modelName,
+                        inputTokens: 0,
+                        outputTokens: 0,
+                        totalTokens: 0,
+                        inputCost: 0,
+                        outputCost: 0,
+                        totalCost: 0
+                      });
+                    }
+
+                    const usage = usageMap.get(modelName)!;
+                    const tokens = parseFloat(filter.units) || 0;
+                    const cost = filter.amount_cents / 100;
+
+                    if (tokenType === "input") {
+                      usage.inputTokens += tokens;
+                      usage.inputCost += cost;
+                    } else if (tokenType === "output") {
+                      usage.outputTokens += tokens;
+                      usage.outputCost += cost;
+                    }
+
+                    usage.totalTokens = usage.inputTokens + usage.outputTokens;
+                    usage.totalCost = usage.inputCost + usage.outputCost;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        setModelUsage(Array.from(usageMap.values()));
+      } else {
+        setModelUsage([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -260,6 +369,23 @@ export const BillingPage = () => {
 
       <h1 className="text-3xl font-bold mb-6">Billing</h1>
 
+      {/* Development Warning */}
+      <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg p-4 mb-6">
+        <div className="flex items-start">
+          <svg className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <h3 className="font-semibold text-orange-800 dark:text-orange-200 mb-1">
+              Under Development
+            </h3>
+            <p className="text-sm text-orange-700 dark:text-orange-300">
+              This billing page is currently under development. Some features may not work as expected or may change without notice.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Wallet Balance Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Wallet Balance</h2>
@@ -423,6 +549,80 @@ export const BillingPage = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Your payment method will be charged immediately.
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* Model Usage Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Current Billing Period Usage</h2>
+
+        {loadingTransactions ? (
+          <p className="text-gray-600 dark:text-gray-400">Loading usage data...</p>
+        ) : modelUsage.length === 0 ? (
+          <p className="text-gray-600 dark:text-gray-400">No usage data for this billing period yet</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Tokens</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Tokens</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Total Tokens</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modelUsage
+                  .sort((a, b) => b.totalCost - a.totalCost)
+                  .map((usage) => (
+                    <tr
+                      key={usage.model}
+                      className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                    >
+                      <td className="py-3 px-2 text-gray-900 dark:text-gray-100 font-medium">
+                        {usage.model}
+                      </td>
+                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                        {usage.inputTokens.toLocaleString()}
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                          (${usage.inputCost.toFixed(4)})
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                        {usage.outputTokens.toLocaleString()}
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                          (${usage.outputCost.toFixed(4)})
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300 font-medium">
+                        {usage.totalTokens.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-2 text-right font-semibold text-gray-900 dark:text-gray-100">
+                        ${usage.totalCost.toFixed(4)}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
+                  <td className="py-3 px-2 text-gray-900 dark:text-gray-100">Total</td>
+                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                    {modelUsage.reduce((sum, u) => sum + u.inputTokens, 0).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                    {modelUsage.reduce((sum, u) => sum + u.outputTokens, 0).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                    {modelUsage.reduce((sum, u) => sum + u.totalTokens, 0).toLocaleString()}
+                  </td>
+                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                    ${modelUsage.reduce((sum, u) => sum + u.totalCost, 0).toFixed(4)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         )}
       </div>

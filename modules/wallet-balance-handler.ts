@@ -173,6 +173,31 @@ export default async function (
       context.log.warn(`Error checking payment method: ${error}`);
     }
 
+    // Fetch current usage from Lago
+    let currentUsage = null;
+    try {
+      const usageResponse = await fetch(
+        `${environment.LAGO_API_BASE}/api/v1/customers/${userId}/current_usage`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (usageResponse.ok) {
+        const usageData = await usageResponse.json();
+        currentUsage = usageData;
+        context.log.info(`Retrieved current usage data`);
+      } else {
+        context.log.warn(`Failed to fetch current usage: ${usageResponse.status}`);
+      }
+    } catch (error) {
+      context.log.warn(`Error fetching current usage: ${error}`);
+    }
+
     // Fetch wallet transactions from Lago
     let walletTransactions = [];
     if (walletData.wallets && walletData.wallets.length > 0) {
@@ -208,7 +233,8 @@ export default async function (
       JSON.stringify({
         ...walletData,
         hasPaymentMethod,
-        wallet_transactions: walletTransactions
+        wallet_transactions: walletTransactions,
+        current_usage: currentUsage
       }),
       {
         status: 200,
