@@ -1,7 +1,25 @@
 import type { ZudokuConfig } from "zudoku";
 import { BillingPage } from "./src/BillingPage";
+import { createApiIdentityPlugin } from "zudoku/plugins";
 
 const config: ZudokuConfig = {
+  plugins: [
+    createApiIdentityPlugin({
+      getIdentities: async (context) => [
+        {
+          id: "auth0-token",
+          label: "Authenticated User",
+          authorizeRequest: (request) => {
+            const token = context.authentication?.getAccessToken();
+            if (token) {
+              request.headers.set("Authorization", `Bearer ${token}`);
+            }
+            return request;
+          },
+        },
+      ],
+    }),
+  ],
   site: {
     title: "Public AI Gateway",
     logo: {

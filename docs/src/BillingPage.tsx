@@ -20,25 +20,21 @@ export const BillingPage = () => {
 
   useEffect(() => {
     const fetchWalletBalance = async () => {
-      if (!auth.isAuthenticated || !auth.profile?.sub) {
+      if (!auth.isAuthenticated) {
         setLoading(false);
         return;
       }
 
       try {
-        const userId = auth.profile.sub;
-
-        // Get the access token for authentication
-        const accessToken = await auth.getAccessTokenSilently();
-
         // Fetch wallet information from the API
-        const serverUrl = import.meta.env.ZUPLO_SERVER_URL || "http://localhost:9000";
+        // Authentication is handled by the API Identity plugin which adds the Authorization header
+        const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
         const response = await fetch(
           `${serverUrl}/v1/developer/wallet`,
           {
             headers: {
-              "Authorization": `Bearer ${accessToken}`,
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "X-API-Identity": "auth0-token" // Tell the plugin to use our auth0-token identity
             }
           }
         );
@@ -64,7 +60,7 @@ export const BillingPage = () => {
     };
 
     fetchWalletBalance();
-  }, [auth.isAuthenticated, auth.profile?.sub]);
+  }, [auth.isAuthenticated]);
 
   if (!auth.isAuthenticated) {
     return (
