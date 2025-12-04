@@ -139,7 +139,15 @@ export const BillingPage = () => {
       }
 
       const transactionData = await topUpResponse.json();
+      console.log("Transaction response:", transactionData);
+
       const transaction = transactionData.wallet_transaction;
+
+      if (!transaction) {
+        throw new Error("No transaction data returned from server");
+      }
+
+      console.log("Transaction status:", transaction.status);
 
       // Step 2: Check transaction status
       if (transaction.status === "settled") {
@@ -171,6 +179,11 @@ export const BillingPage = () => {
         }
 
         const paymentData = await paymentUrlResponse.json();
+        console.log("Payment URL response:", paymentData);
+
+        if (!paymentData.payment_url) {
+          throw new Error("No payment URL returned from server");
+        }
 
         // Redirect to Stripe checkout
         window.location.href = paymentData.payment_url;

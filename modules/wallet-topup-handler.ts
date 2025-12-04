@@ -222,9 +222,32 @@ export default async function (
     const transactionData = await topUpResponse.json();
     context.log.info(`Wallet transaction created: ${JSON.stringify(transactionData)}`);
 
-    // Return transaction data - frontend will check status (settled vs pending)
+    // Lago returns wallet_transactions as an array, extract the first one
+    const transaction = transactionData.wallet_transactions?.[0];
+
+    if (!transaction) {
+      context.log.error("No transaction returned from Lago");
+      return new Response(
+        JSON.stringify({
+          error: {
+            message: "Failed to create transaction",
+            type: "api_error"
+          }
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+    }
+
+    // Return transaction in expected format - frontend will check status (settled vs pending)
     return new Response(
-      JSON.stringify(transactionData),
+      JSON.stringify({
+        wallet_transaction: transaction
+      }),
       {
         status: 200,
         headers: {
