@@ -161,10 +161,46 @@ export const BillingPage = () => {
       }
 
       const transactionData = await topUpResponse.json();
-      const transaction = transactionData.wallet_transaction;
+      let transaction = transactionData.wallet_transaction;
 
       if (!transaction) {
         throw new Error("No transaction data returned from server");
+      }
+
+      // Poll for transaction status until it's settled or failed
+      // Lago creates the transaction as "pending", then charges Stripe, then updates to "settled"
+      const maxAttempts = 20; // 20 attempts
+      const pollInterval = 1000; // 1 second between attempts
+      let attempts = 0;
+
+      while (transaction.status === "pending" && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        attempts++;
+
+        // Refresh wallet data to get updated transaction status
+        const pollRequest = new Request(
+          `${serverUrl}/v1/developer/wallet`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            }
+          }
+        );
+
+        const signedPollRequest = await context.signRequest(pollRequest);
+        const pollResponse = await fetch(signedPollRequest);
+
+        if (pollResponse.ok) {
+          const pollData = await pollResponse.json();
+          // Find our transaction in the list
+          const updatedTransaction = pollData.wallet_transactions?.find(
+            (tx: WalletTransaction) => tx.lago_id === transaction.lago_id
+          );
+          if (updatedTransaction) {
+            transaction = updatedTransaction;
+          }
+        }
       }
 
       if (transaction.status === "settled") {
@@ -175,8 +211,12 @@ export const BillingPage = () => {
 
         // Refresh wallet data (balance, payment method, and transactions)
         await fetchWalletBalance();
+      } else if (transaction.status === "pending") {
+        // Still pending after max attempts
+        throw new Error("Payment is taking longer than expected. Please refresh the page in a moment to see your updated balance.");
       } else {
-        throw new Error("Payment could not be processed. Please try again.");
+        // Failed or other status
+        throw new Error(`Payment ${transaction.status}. Please try again or contact support.`);
       }
     } catch (err) {
       setTopUpError(err instanceof Error ? err.message : "Failed to process top-up");
