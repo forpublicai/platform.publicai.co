@@ -29,7 +29,7 @@ export const BillingPage = () => {
         const userId = auth.profile.sub;
 
         // Get the access token for authentication
-        const accessToken = await auth.getAccessToken();
+        const accessToken = await auth.getAccessTokenSilently();
 
         // Fetch wallet information from the API
         const serverUrl = import.meta.env.ZUPLO_SERVER_URL || "http://localhost:9000";
