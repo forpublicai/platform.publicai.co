@@ -20,21 +20,24 @@ export const BillingPage = () => {
 
   useEffect(() => {
     const fetchWalletBalance = async () => {
-      if (!auth.isAuthenticated) {
+      if (!auth.isAuthenticated || !auth.user?.sub) {
         setLoading(false);
         return;
       }
 
       try {
-        // Fetch wallet information from the API
-        // Authentication is handled by the API Identity plugin which adds the Authorization header
+        console.log("Fetching wallet balance for user:", auth.user.sub);
+
+        // Since we're on the docs site, call the wallet endpoint with the user ID in query params
+        // The backend can validate this against the Auth0 session cookie
         const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
         const response = await fetch(
-          `${serverUrl}/v1/developer/wallet`,
+          `${serverUrl}/v1/developer/wallet?userId=${encodeURIComponent(auth.user.sub)}`,
           {
+            method: "GET",
+            credentials: 'include', // Send cookies
             headers: {
               "Content-Type": "application/json",
-              "X-API-Identity": "auth0-token" // Tell the plugin to use our auth0-token identity
             }
           }
         );

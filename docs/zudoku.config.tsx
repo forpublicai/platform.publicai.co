@@ -1,25 +1,8 @@
 import type { ZudokuConfig } from "zudoku";
-import { BillingPage } from "./src/BillingPage";
-import { createApiIdentityPlugin } from "zudoku/plugins";
+import { billingPlugin } from "./src/billingPlugin";
 
 const config: ZudokuConfig = {
-  plugins: [
-    createApiIdentityPlugin({
-      getIdentities: async (context) => [
-        {
-          id: "auth0-token",
-          label: "Authenticated User",
-          authorizeRequest: (request) => {
-            const token = context.authentication?.getAccessToken();
-            if (token) {
-              request.headers.set("Authorization", `Bearer ${token}`);
-            }
-            return request;
-          },
-        },
-      ],
-    }),
-  ],
+  plugins: [billingPlugin],
   site: {
     title: "Public AI Gateway",
     logo: {
@@ -101,9 +84,8 @@ const config: ZudokuConfig = {
       label: "API Reference",
     },
     {
-      type: "custom-page",
-      path: "/billing",
-      element: <BillingPage />,
+      type: "link",
+      to: "/billing",
       label: "Billing",
     },
     {
@@ -136,7 +118,7 @@ const config: ZudokuConfig = {
     createKey: async ({ apiKey, context, auth }) => {
       // process.env.ZUPLO_PUBLIC_SERVER_URL is only required for local development
       // import.meta.env.ZUPLO_SERVER_URL is automatically set when using a deployed environment, you do not need to set it
-      const serverUrl = process.env.ZUPLO_PUBLIC_SERVER_URL || import.meta.env.ZUPLO_SERVER_URL; 
+      const serverUrl = process.env.ZUPLO_PUBLIC_SERVER_URL || import.meta.env.ZUPLO_SERVER_URL;
       const createApiKeyRequest = new Request(serverUrl + "/v1/developer/api-key", {
         method: "POST",
         body: JSON.stringify({
@@ -158,7 +140,7 @@ const config: ZudokuConfig = {
 
       if (!createApiKey.ok) {
         throw new Error("Could not create API Key");
-      } 
+      }
 
       return true;
     },

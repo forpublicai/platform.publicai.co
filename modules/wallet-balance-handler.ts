@@ -5,21 +5,24 @@ export default async function (
   context: ZuploContext
 ) {
   context.log.info("Wallet balance handler called");
-  context.log.info(`Request user: ${JSON.stringify(request.user)}`);
+  context.log.info(`Request URL: ${request.url}`);
   context.log.info(`Request headers: ${JSON.stringify([...request.headers.entries()])}`);
 
-  // Check if user is authenticated
-  if (!request.user?.sub) {
-    context.log.warn("No user.sub found in request");
+  // Get userId from query parameter
+  const url = new URL(request.url);
+  const userId = url.searchParams.get("userId");
+
+  if (!userId) {
+    context.log.warn("No userId provided in query parameters");
     return new Response(
       JSON.stringify({
         error: {
-          message: "Authentication required",
-          type: "unauthorized"
+          message: "userId query parameter is required",
+          type: "bad_request"
         }
       }),
       {
-        status: 401,
+        status: 400,
         headers: {
           "Content-Type": "application/json"
         }
@@ -27,7 +30,6 @@ export default async function (
     );
   }
 
-  const userId = request.user.sub;
   context.log.info(`Fetching wallet for user: ${userId}`);
 
   try {
