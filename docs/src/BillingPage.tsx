@@ -10,6 +10,8 @@ interface WalletData {
     credits_ongoing_balance: string;
     currency: string;
   }>;
+  hasPaymentMethod: boolean;
+  wallet_transactions: WalletTransaction[];
 }
 
 interface WalletTransaction {
@@ -19,10 +21,6 @@ interface WalletTransaction {
   amount: string;
   credit_amount: string;
   created_at: string;
-}
-
-interface TransactionsData {
-  wallet_transactions: WalletTransaction[];
 }
 
 export const BillingPage = () => {
@@ -44,9 +42,11 @@ export const BillingPage = () => {
   const fetchWalletBalance = async () => {
     if (!auth.isAuthenticated) {
       setLoading(false);
+      setLoadingTransactions(false);
       return;
     }
 
+    setLoadingTransactions(true);
     try {
       const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
       const walletRequest = new Request(
@@ -63,11 +63,12 @@ export const BillingPage = () => {
       const response = await fetch(signedRequest);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch wallet balance");
+        throw new Error("Failed to fetch wallet data");
       }
 
       const data: WalletData = await response.json();
 
+      // Set balance
       if (data.wallets && data.wallets.length > 0) {
         const wallet = data.wallets[0];
         const creditsBalance = parseFloat(wallet.credits_ongoing_balance || "0");
@@ -75,66 +76,16 @@ export const BillingPage = () => {
       } else {
         setBalance("0.00");
       }
+
+      // Set payment method status
+      setHasPaymentMethod(data.hasPaymentMethod || false);
+
+      // Set transactions
+      setTransactions(data.wallet_transactions || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkPaymentMethod = async () => {
-    if (!auth.isAuthenticated) return;
-
-    try {
-      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
-      const paymentMethodRequest = new Request(
-        `${serverUrl}/v1/developer/wallet/payment-method`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          }
-        }
-      );
-
-      const signedRequest = await context.signRequest(paymentMethodRequest);
-      const response = await fetch(signedRequest);
-
-      if (response.ok) {
-        const data = await response.json();
-        setHasPaymentMethod(data.hasPaymentMethod);
-      }
-    } catch (err) {
-      console.error("Failed to check payment method:", err);
-    }
-  };
-
-  const fetchTransactions = async () => {
-    if (!auth.isAuthenticated) return;
-
-    setLoadingTransactions(true);
-    try {
-      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
-      const transactionsRequest = new Request(
-        `${serverUrl}/v1/developer/wallet/transactions`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          }
-        }
-      );
-
-      const signedRequest = await context.signRequest(transactionsRequest);
-      const response = await fetch(signedRequest);
-
-      if (response.ok) {
-        const data: TransactionsData = await response.json();
-        setTransactions(data.wallet_transactions || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch transactions:", err);
-    } finally {
       setLoadingTransactions(false);
     }
   };
@@ -146,8 +97,8 @@ export const BillingPage = () => {
     try {
       const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
 
-      const checkoutRequest = new Request(
-        `${serverUrl}/v1/developer/wallet/checkout-url`,
+      const setupPaymentRequest = new Request(
+        `${serverUrl}/v1/developer/wallet/setup-payment`,
         {
           method: "POST",
           headers: {
@@ -156,7 +107,7 @@ export const BillingPage = () => {
         }
       );
 
-      const signedRequest = await context.signRequest(checkoutRequest);
+      const signedRequest = await context.signRequest(setupPaymentRequest);
       const response = await fetch(signedRequest);
 
       if (!response.ok) {
@@ -222,9 +173,8 @@ export const BillingPage = () => {
         setShowCustomInput(false);
         setCustomAmount("");
 
-        // Refresh balance and transactions
+        // Refresh wallet data (balance, payment method, and transactions)
         await fetchWalletBalance();
-        await fetchTransactions();
       } else {
         throw new Error("Payment could not be processed. Please try again.");
       }
@@ -246,8 +196,6 @@ export const BillingPage = () => {
 
   useEffect(() => {
     fetchWalletBalance();
-    fetchTransactions();
-    checkPaymentMethod();
   }, [auth.isAuthenticated]);
 
   if (!auth.isAuthenticated) {

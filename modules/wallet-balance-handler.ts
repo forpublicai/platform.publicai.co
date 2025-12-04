@@ -123,9 +123,68 @@ export default async function (
     const walletData = await checkWalletResponse.json();
     context.log.info(`Wallet data retrieved: ${JSON.stringify(walletData)}`);
 
-    // Return wallet data
+    // Check Stripe for payment methods
+    let hasPaymentMethod = false;
+    try {
+      const stripeResponse = await fetch(
+        `https://api.stripe.com/v1/customers/${userId}/payment_methods?type=card`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${environment.STRIPE_API_KEY}`,
+            "Content-Type": "application/x-www-form-urlencoded"
+          }
+        }
+      );
+
+      if (stripeResponse.ok) {
+        const stripeData = await stripeResponse.json();
+        hasPaymentMethod = stripeData.data && stripeData.data.length > 0;
+        context.log.info(`Customer has ${stripeData.data?.length || 0} payment method(s)`);
+      } else {
+        context.log.warn(`Failed to fetch payment methods from Stripe, assuming no payment method`);
+      }
+    } catch (error) {
+      context.log.warn(`Error checking payment method: ${error}`);
+    }
+
+    // Fetch wallet transactions from Lago
+    let walletTransactions = [];
+    if (walletData.wallets && walletData.wallets.length > 0) {
+      const walletId = walletData.wallets[0].lago_id;
+      context.log.info(`Fetching transactions for wallet ID: ${walletId}`);
+
+      try {
+        const transactionsResponse = await fetch(
+          `${environment.LAGO_API_BASE}/api/v1/wallets/${walletId}/wallet_transactions?per_page=20&page=1`,
+          {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+              "Content-Type": "application/json"
+            }
+          }
+        );
+
+        if (transactionsResponse.ok) {
+          const transactionsData = await transactionsResponse.json();
+          walletTransactions = transactionsData.wallet_transactions || [];
+          context.log.info(`Retrieved ${walletTransactions.length} wallet transactions`);
+        } else {
+          context.log.warn(`Failed to fetch wallet transactions`);
+        }
+      } catch (error) {
+        context.log.warn(`Error fetching wallet transactions: ${error}`);
+      }
+    }
+
+    // Return consolidated wallet data
     return new Response(
-      JSON.stringify(walletData),
+      JSON.stringify({
+        ...walletData,
+        hasPaymentMethod,
+        wallet_transactions: walletTransactions
+      }),
       {
         status: 200,
         headers: {
@@ -134,7 +193,7 @@ export default async function (
       }
     );
   } catch (error) {
-    context.log.error(`Error fetching wallet balance: ${error}`);
+    context.log.error(`Error fetching wallet data: ${error}`);
 
     return new Response(
       JSON.stringify({
