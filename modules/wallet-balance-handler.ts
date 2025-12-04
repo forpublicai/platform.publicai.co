@@ -4,8 +4,13 @@ export default async function (
   request: ZuploRequest,
   context: ZuploContext
 ) {
+  context.log.info("Wallet balance handler called");
+  context.log.info(`Request user: ${JSON.stringify(request.user)}`);
+  context.log.info(`Request headers: ${JSON.stringify([...request.headers.entries()])}`);
+
   // Check if user is authenticated
   if (!request.user?.sub) {
+    context.log.warn("No user.sub found in request");
     return new Response(
       JSON.stringify({
         error: {
@@ -23,6 +28,7 @@ export default async function (
   }
 
   const userId = request.user.sub;
+  context.log.info(`Fetching wallet for user: ${userId}`);
 
   try {
     // Fetch wallet balance from Lago API
@@ -39,13 +45,14 @@ export default async function (
 
     if (!checkWalletResponse.ok) {
       const error = await checkWalletResponse.text();
-      context.log.error(`Failed to fetch wallet balance: ${error}`);
+      context.log.error(`Failed to fetch wallet balance from Lago: Status ${checkWalletResponse.status}, Error: ${error}`);
 
       return new Response(
         JSON.stringify({
           error: {
             message: "Failed to fetch wallet balance",
-            type: "api_error"
+            type: "api_error",
+            details: error
           }
         }),
         {
@@ -58,6 +65,7 @@ export default async function (
     }
 
     const walletData = await checkWalletResponse.json();
+    context.log.info(`Wallet data retrieved: ${JSON.stringify(walletData)}`);
 
     // Return wallet data
     return new Response(
