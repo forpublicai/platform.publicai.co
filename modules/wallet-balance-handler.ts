@@ -126,23 +126,48 @@ export default async function (
     // Check Stripe for payment methods
     let hasPaymentMethod = false;
     try {
-      const stripeResponse = await fetch(
-        `https://api.stripe.com/v1/customers/${userId}/payment_methods?type=card`,
+      // First, search for the Stripe customer by name (userId is set as the customer name)
+      const searchQuery = `name:'${userId}'`;
+      const searchResponse = await fetch(
+        `https://api.stripe.com/v1/customers/search?query=${encodeURIComponent(searchQuery)}`,
         {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${environment.STRIPE_API_KEY}`,
-            "Content-Type": "application/x-www-form-urlencoded"
           }
         }
       );
 
-      if (stripeResponse.ok) {
-        const stripeData = await stripeResponse.json();
-        hasPaymentMethod = stripeData.data && stripeData.data.length > 0;
-        context.log.info(`Customer has ${stripeData.data?.length || 0} payment method(s)`);
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        if (searchData.data && searchData.data.length > 0) {
+          const stripeCustomerId = searchData.data[0].id;
+          context.log.info(`Found Stripe customer: ${stripeCustomerId}`);
+
+          // Now fetch payment methods for this customer
+          const paymentMethodsResponse = await fetch(
+            `https://api.stripe.com/v1/customers/${stripeCustomerId}/payment_methods?type=card`,
+            {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${environment.STRIPE_API_KEY}`,
+              }
+            }
+          );
+
+          if (paymentMethodsResponse.ok) {
+            const paymentMethodsData = await paymentMethodsResponse.json();
+            hasPaymentMethod = paymentMethodsData.data && paymentMethodsData.data.length > 0;
+            context.log.info(`Customer has ${paymentMethodsData.data?.length || 0} payment method(s)`);
+          } else {
+            context.log.warn(`Failed to fetch payment methods from Stripe`);
+          }
+        } else {
+          context.log.warn(`No Stripe customer found with name: ${userId}`);
+        }
       } else {
-        context.log.warn(`Failed to fetch payment methods from Stripe, assuming no payment method`);
+        const errorText = await searchResponse.text();
+        context.log.warn(`Failed to search Stripe customers: ${errorText}`);
       }
     } catch (error) {
       context.log.warn(`Error checking payment method: ${error}`);
