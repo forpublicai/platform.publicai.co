@@ -6,23 +6,21 @@ export default async function (
 ) {
   context.log.info("Wallet balance handler called");
   context.log.info(`Request URL: ${request.url}`);
+  context.log.info(`Request user: ${JSON.stringify(request.user)}`);
   context.log.info(`Request headers: ${JSON.stringify([...request.headers.entries()])}`);
 
-  // Get userId from query parameter
-  const url = new URL(request.url);
-  const userId = url.searchParams.get("userId");
-
-  if (!userId) {
-    context.log.warn("No userId provided in query parameters");
+  // Check if user is authenticated via JWT
+  if (!request.user?.sub) {
+    context.log.warn("No user.sub found in request - authentication failed");
     return new Response(
       JSON.stringify({
         error: {
-          message: "userId query parameter is required",
-          type: "bad_request"
+          message: "Authentication required",
+          type: "unauthorized"
         }
       }),
       {
-        status: 400,
+        status: 401,
         headers: {
           "Content-Type": "application/json"
         }
@@ -30,7 +28,8 @@ export default async function (
     );
   }
 
-  context.log.info(`Fetching wallet for user: ${userId}`);
+  const userId = request.user.sub;
+  context.log.info(`Fetching wallet for authenticated user: ${userId}`);
 
   try {
     // Fetch wallet balance from Lago API

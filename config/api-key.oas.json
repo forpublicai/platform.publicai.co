@@ -102,18 +102,7 @@
       },
       "get": {
         "summary": "Get wallet balance",
-        "description": "Returns the wallet balance for the specified user",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The user ID to fetch wallet balance for"
-          }
-        ],
+        "description": "Returns the wallet balance for the authenticated user",
         "responses": {
           "200": {
             "description": "OK",
@@ -133,7 +122,9 @@
             "module": "$import(./modules/wallet-balance-handler)"
           },
           "policies": {
-            "inbound": []
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
           }
         },
         "operationId": "wallet-balance-endpoint",

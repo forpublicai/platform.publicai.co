@@ -1,5 +1,5 @@
 import { Head } from "zudoku/components";
-import { useAuth } from "zudoku/hooks";
+import { useAuth, useZudoku } from "zudoku/hooks";
 import { useEffect, useState } from "react";
 
 interface WalletData {
@@ -14,33 +14,46 @@ interface WalletData {
 
 export const BillingPage = () => {
   const auth = useAuth();
+  const context = useZudoku();
   const [balance, setBalance] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchWalletBalance = async () => {
-      if (!auth.isAuthenticated || !auth.user?.sub) {
+      console.log("Auth state:", {
+        isAuthenticated: auth.isAuthenticated,
+        user: auth.user,
+        authKeys: Object.keys(auth)
+      });
+      console.log("Context:", context);
+
+      if (!auth.isAuthenticated) {
+        console.log("User not authenticated");
         setLoading(false);
         return;
       }
 
       try {
-        console.log("Fetching wallet balance for user:", auth.user.sub);
+        console.log("Fetching wallet balance...");
 
-        // Since we're on the docs site, call the wallet endpoint with the user ID in query params
-        // The backend can validate this against the Auth0 session cookie
+        // Create the request
         const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
-        const response = await fetch(
-          `${serverUrl}/v1/developer/wallet?userId=${encodeURIComponent(auth.user.sub)}`,
+        const walletRequest = new Request(
+          `${serverUrl}/v1/developer/wallet`,
           {
             method: "GET",
-            credentials: 'include', // Send cookies
             headers: {
               "Content-Type": "application/json",
             }
           }
         );
+
+        // Sign the request using Zudoku context (same as CreateApiKey does)
+        const signedRequest = await context.signRequest(walletRequest);
+
+        // Make the authenticated request
+        const response = await fetch(signedRequest);
 
         if (!response.ok) {
           throw new Error("Failed to fetch wallet balance");
