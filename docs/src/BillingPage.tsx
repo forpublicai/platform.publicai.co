@@ -33,12 +33,13 @@ export const BillingPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [processingTopUp, setProcessingTopUp] = useState(false);
+  const [processingPaymentSetup, setProcessingPaymentSetup] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
   const [topUpError, setTopUpError] = useState<string | null>(null);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
 
   const fetchWalletBalance = async () => {
     if (!auth.isAuthenticated) {
@@ -81,6 +82,33 @@ export const BillingPage = () => {
     }
   };
 
+  const checkPaymentMethod = async () => {
+    if (!auth.isAuthenticated) return;
+
+    try {
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+      const paymentMethodRequest = new Request(
+        `${serverUrl}/v1/developer/wallet/payment-method`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      const signedRequest = await context.signRequest(paymentMethodRequest);
+      const response = await fetch(signedRequest);
+
+      if (response.ok) {
+        const data = await response.json();
+        setHasPaymentMethod(data.hasPaymentMethod);
+      }
+    } catch (err) {
+      console.error("Failed to check payment method:", err);
+    }
+  };
+
   const fetchTransactions = async () => {
     if (!auth.isAuthenticated) return;
 
@@ -111,7 +139,51 @@ export const BillingPage = () => {
     }
   };
 
+  const handleAddPaymentMethod = async () => {
+    setProcessingPaymentSetup(true);
+    setTopUpError(null);
+
+    try {
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+
+      const checkoutRequest = new Request(
+        `${serverUrl}/v1/developer/wallet/checkout-url`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      const signedRequest = await context.signRequest(checkoutRequest);
+      const response = await fetch(signedRequest);
+
+      if (!response.ok) {
+        throw new Error("Failed to generate payment setup URL");
+      }
+
+      const data = await response.json();
+
+      if (!data.checkout_url) {
+        throw new Error("No checkout URL returned from server");
+      }
+
+      // Redirect to Stripe payment setup
+      window.location.href = data.checkout_url;
+    } catch (err) {
+      setTopUpError(err instanceof Error ? err.message : "Failed to setup payment method");
+    } finally {
+      setProcessingPaymentSetup(false);
+    }
+  };
+
   const handleTopUp = async (amount: number) => {
+    if (!hasPaymentMethod) {
+      setTopUpError("Please add a payment method first");
+      return;
+    }
+
     setProcessingTopUp(true);
     setTopUpError(null);
     setTopUpSuccess(false);
@@ -119,7 +191,6 @@ export const BillingPage = () => {
     try {
       const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
 
-      // Step 1: Create wallet transaction
       const topUpRequest = new Request(
         `${serverUrl}/v1/developer/wallet/topup`,
         {
@@ -135,23 +206,18 @@ export const BillingPage = () => {
       const topUpResponse = await fetch(signedTopUpRequest);
 
       if (!topUpResponse.ok) {
-        throw new Error("Failed to create top-up transaction");
+        throw new Error("Failed to process top-up");
       }
 
       const transactionData = await topUpResponse.json();
-      console.log("Transaction response:", transactionData);
-
       const transaction = transactionData.wallet_transaction;
 
       if (!transaction) {
         throw new Error("No transaction data returned from server");
       }
 
-      console.log("Transaction status:", transaction.status);
-
-      // Step 2: Check transaction status
       if (transaction.status === "settled") {
-        // Card on file - charge succeeded!
+        // Charge succeeded!
         setTopUpSuccess(true);
         setShowCustomInput(false);
         setCustomAmount("");
@@ -159,34 +225,8 @@ export const BillingPage = () => {
         // Refresh balance and transactions
         await fetchWalletBalance();
         await fetchTransactions();
-      } else if (transaction.status === "pending") {
-        // No card or payment failed - need checkout
-        const paymentUrlRequest = new Request(
-          `${serverUrl}/v1/developer/wallet/transactions/${transaction.lago_id}/payment-url`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            }
-          }
-        );
-
-        const signedPaymentUrlRequest = await context.signRequest(paymentUrlRequest);
-        const paymentUrlResponse = await fetch(signedPaymentUrlRequest);
-
-        if (!paymentUrlResponse.ok) {
-          throw new Error("Failed to generate payment URL");
-        }
-
-        const paymentData = await paymentUrlResponse.json();
-        console.log("Payment URL response:", paymentData);
-
-        if (!paymentData.payment_url) {
-          throw new Error("No payment URL returned from server");
-        }
-
-        // Redirect to Stripe checkout
-        window.location.href = paymentData.payment_url;
+      } else {
+        throw new Error("Payment could not be processed. Please try again.");
       }
     } catch (err) {
       setTopUpError(err instanceof Error ? err.message : "Failed to process top-up");
@@ -207,6 +247,7 @@ export const BillingPage = () => {
   useEffect(() => {
     fetchWalletBalance();
     fetchTransactions();
+    checkPaymentMethod();
   }, [auth.isAuthenticated]);
 
   if (!auth.isAuthenticated) {
@@ -267,6 +308,42 @@ export const BillingPage = () => {
         )}
       </div>
 
+      {/* Payment Method Setup Section */}
+      {!hasPaymentMethod && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+
+          <div className="space-y-4">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+              <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
+                No payment method on file
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                You need to add a payment method before you can top up your wallet.
+              </p>
+            </div>
+
+            {topUpError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                <p className="text-red-800 dark:text-red-200">{topUpError}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleAddPaymentMethod}
+              disabled={processingPaymentSetup}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed w-full sm:w-auto"
+            >
+              {processingPaymentSetup ? "Redirecting..." : "Add Payment Method"}
+            </button>
+
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              You'll be redirected to Stripe to securely add your payment details.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Top Up Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Add Credits</h2>
@@ -279,79 +356,87 @@ export const BillingPage = () => {
           </div>
         )}
 
-        {topUpError && (
+        {topUpError && hasPaymentMethod && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-4">
             <p className="text-red-800 dark:text-red-200">{topUpError}</p>
           </div>
         )}
 
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Select an amount to add to your wallet:
-          </p>
-
-          {/* Preset Amount Buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[5, 10, 20, 50].map((amount) => (
-              <button
-                key={amount}
-                onClick={() => handleTopUp(amount)}
-                disabled={processingTopUp}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
-              >
-                ${amount}
-              </button>
-            ))}
-          </div>
-
-          {/* Custom Amount */}
-          {!showCustomInput ? (
-            <button
-              onClick={() => setShowCustomInput(true)}
-              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-            >
-              Enter custom amount
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="Enter amount"
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-              <button
-                onClick={handleCustomTopUp}
-                disabled={processingTopUp || !customAmount}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-md transition-colors disabled:cursor-not-allowed"
-              >
-                Add
-              </button>
-              <button
-                onClick={() => {
-                  setShowCustomInput(false);
-                  setCustomAmount("");
-                }}
-                className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
-          {processingTopUp && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Processing your payment...
+        {!hasPaymentMethod ? (
+          <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md p-6 text-center">
+            <p className="text-gray-600 dark:text-gray-400">
+              Please add a payment method first to top up your wallet.
             </p>
-          )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Select an amount to add to your wallet:
+            </p>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            If you have a card on file, you'll be charged immediately. Otherwise, you'll be redirected to complete payment setup.
-          </p>
-        </div>
+            {/* Preset Amount Buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[5, 10, 20, 50].map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => handleTopUp(amount)}
+                  disabled={processingTopUp}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+                >
+                  ${amount}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Amount */}
+            {!showCustomInput ? (
+              <button
+                onClick={() => setShowCustomInput(true)}
+                className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+              >
+                Enter custom amount
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+                <button
+                  onClick={handleCustomTopUp}
+                  disabled={processingTopUp || !customAmount}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-md transition-colors disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCustomInput(false);
+                    setCustomAmount("");
+                  }}
+                  className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {processingTopUp && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Processing your payment...
+              </p>
+            )}
+
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Your payment method will be charged immediately.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Transaction History */}

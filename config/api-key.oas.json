@@ -211,7 +211,7 @@
         "x-internal": true
       }
     },
-    "/v1/developer/wallet/transactions/:transactionId/payment-url": {
+    "/v1/developer/wallet/transactions/{transactionId}/payment-url": {
       "x-zuplo-path": {
         "pathMode": "open-api"
       },
@@ -254,6 +254,41 @@
           }
         },
         "operationId": "wallet-payment-url-endpoint",
+        "x-internal": true
+      }
+    },
+    "/v1/developer/wallet/payment-method": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "get": {
+        "summary": "Check if customer has payment method on file",
+        "description": "Returns whether the customer has a payment method saved in Stripe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/check-payment-method-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "check-payment-method-endpoint",
         "x-internal": true
       }
     },
@@ -501,6 +536,16 @@
             "description": "Stripe payment setup URL"
           }
         }
+      },
+      "PaymentMethodStatusResponse": {
+        "type": "object",
+        "properties": {
+          "hasPaymentMethod": {
+            "type": "boolean",
+            "description": "Whether the customer has a payment method on file"
+          }
+        },
+        "required": ["hasPaymentMethod"]
       }
     }
   }
