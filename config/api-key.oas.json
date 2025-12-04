@@ -95,6 +95,41 @@
         "operationId": "upgrade-plan-endpoint",
         "x-internal": true
       }
+    },
+    "/v1/developer/wallet": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "get": {
+        "summary": "Get wallet balance",
+        "description": "Returns the wallet balance for the authenticated user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/wallet-balance-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "wallet-balance-endpoint",
+        "x-internal": true
+      }
     }
   },
   "components": {
@@ -146,6 +181,43 @@
         "required": [
           "requests"
         ]
+      },
+      "WalletResponse": {
+        "type": "object",
+        "properties": {
+          "wallets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Wallet"
+            },
+            "description": "Array of wallets for the user"
+          }
+        }
+      },
+      "Wallet": {
+        "type": "object",
+        "properties": {
+          "lago_id": {
+            "type": "string",
+            "description": "The Lago wallet ID"
+          },
+          "external_customer_id": {
+            "type": "string",
+            "description": "The external customer ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The wallet name"
+          },
+          "credits_ongoing_balance": {
+            "type": "string",
+            "description": "The current credits balance"
+          },
+          "currency": {
+            "type": "string",
+            "description": "The currency code"
+          }
+        }
       }
     }
   }

@@ -1,4 +1,5 @@
 import type { ZudokuConfig } from "zudoku";
+import { BillingPage } from "./src/BillingPage";
 
 const config: ZudokuConfig = {
   site: {
@@ -82,6 +83,12 @@ const config: ZudokuConfig = {
       label: "API Reference",
     },
     {
+      type: "custom-page",
+      path: "/billing",
+      element: <BillingPage />,
+      label: "Billing",
+    },
+    {
       "type": "doc",
       "label": "Support Us",
       "file": "support-us"
@@ -103,6 +110,7 @@ const config: ZudokuConfig = {
     domain: "login.publicai.co",
     clientId: "GsHpOedTKzJpnKlQIIeXDBKjssyOmOsj",
     audience: "https://docs.publicai.company/api",
+    protectedRoutes: ["/billing"],
   },
   apiKeys: {
     enabled: true,
