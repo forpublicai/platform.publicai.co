@@ -130,6 +130,167 @@
         "operationId": "wallet-balance-endpoint",
         "x-internal": true
       }
+    },
+    "/v1/developer/wallet/topup": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Top up wallet balance",
+        "description": "Creates a wallet transaction to add credits. Returns settled if card on file, pending otherwise.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopUpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletTransactionResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/wallet-topup-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "wallet-topup-endpoint",
+        "x-internal": true
+      }
+    },
+    "/v1/developer/wallet/transactions": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "get": {
+        "summary": "Get wallet transaction history",
+        "description": "Returns recent wallet transactions for the authenticated user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletTransactionsResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/wallet-transactions-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "wallet-transactions-endpoint",
+        "x-internal": true
+      }
+    },
+    "/v1/developer/wallet/transactions/:transactionId/payment-url": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Get payment URL for pending transaction",
+        "description": "Generates a Stripe checkout URL for a pending wallet transaction",
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The Lago transaction ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentUrlResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/wallet-payment-url-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "wallet-payment-url-endpoint",
+        "x-internal": true
+      }
+    },
+    "/v1/developer/wallet/checkout-url": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Get customer checkout URL",
+        "description": "Generates a Stripe checkout URL to setup payment method without purchasing",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutUrlResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/customer-checkout-url-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "customer-checkout-url-endpoint",
+        "x-internal": true
+      }
     }
   },
   "components": {
@@ -216,6 +377,128 @@
           "currency": {
             "type": "string",
             "description": "The currency code"
+          }
+        }
+      },
+      "TopUpRequest": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "minimum": 0.01,
+            "description": "Amount to top up in USD"
+          }
+        },
+        "required": ["amount"]
+      },
+      "WalletTransactionResponse": {
+        "type": "object",
+        "properties": {
+          "wallet_transaction": {
+            "type": "object",
+            "properties": {
+              "lago_id": {
+                "type": "string",
+                "description": "Transaction ID"
+              },
+              "wallet_id": {
+                "type": "string",
+                "description": "Wallet ID"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "settled"],
+                "description": "Transaction status"
+              },
+              "transaction_type": {
+                "type": "string",
+                "description": "Type of transaction"
+              },
+              "amount": {
+                "type": "string",
+                "description": "Transaction amount"
+              },
+              "credit_amount": {
+                "type": "string",
+                "description": "Credits added"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Creation timestamp"
+              }
+            }
+          }
+        }
+      },
+      "WalletTransactionsResponse": {
+        "type": "object",
+        "properties": {
+          "wallet_transactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lago_id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "transaction_type": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "string"
+                },
+                "credit_amount": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PaymentUrlResponse": {
+        "type": "object",
+        "properties": {
+          "lago_customer_id": {
+            "type": "string"
+          },
+          "lago_wallet_transaction_id": {
+            "type": "string"
+          },
+          "external_customer_id": {
+            "type": "string"
+          },
+          "payment_provider": {
+            "type": "string"
+          },
+          "payment_url": {
+            "type": "string",
+            "description": "Stripe checkout URL"
+          }
+        }
+      },
+      "CheckoutUrlResponse": {
+        "type": "object",
+        "properties": {
+          "lago_customer_id": {
+            "type": "string"
+          },
+          "external_customer_id": {
+            "type": "string"
+          },
+          "payment_provider": {
+            "type": "string"
+          },
+          "checkout_url": {
+            "type": "string",
+            "description": "Stripe payment setup URL"
           }
         }
       }

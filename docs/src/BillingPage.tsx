@@ -12,70 +12,188 @@ interface WalletData {
   }>;
 }
 
+interface WalletTransaction {
+  lago_id: string;
+  status: string;
+  transaction_type: string;
+  amount: string;
+  credit_amount: string;
+  created_at: string;
+}
+
+interface TransactionsData {
+  wallet_transactions: WalletTransaction[];
+}
+
 export const BillingPage = () => {
   const auth = useAuth();
   const context = useZudoku();
   const [balance, setBalance] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [processingTopUp, setProcessingTopUp] = useState(false);
+  const [topUpSuccess, setTopUpSuccess] = useState(false);
+  const [topUpError, setTopUpError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchWalletBalance = async () => {
-      console.log("Auth state:", {
-        isAuthenticated: auth.isAuthenticated,
-        user: auth.user,
-        authKeys: Object.keys(auth)
-      });
-      console.log("Context:", context);
+  const fetchWalletBalance = async () => {
+    if (!auth.isAuthenticated) {
+      setLoading(false);
+      return;
+    }
 
-      if (!auth.isAuthenticated) {
-        console.log("User not authenticated");
-        setLoading(false);
-        return;
+    try {
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+      const walletRequest = new Request(
+        `${serverUrl}/v1/developer/wallet`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      const signedRequest = await context.signRequest(walletRequest);
+      const response = await fetch(signedRequest);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch wallet balance");
       }
 
-      try {
-        console.log("Fetching wallet balance...");
+      const data: WalletData = await response.json();
 
-        // Create the request
-        const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
-        const walletRequest = new Request(
-          `${serverUrl}/v1/developer/wallet`,
+      if (data.wallets && data.wallets.length > 0) {
+        const wallet = data.wallets[0];
+        const creditsBalance = parseFloat(wallet.credits_ongoing_balance || "0");
+        setBalance(creditsBalance.toFixed(2));
+      } else {
+        setBalance("0.00");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    if (!auth.isAuthenticated) return;
+
+    setLoadingTransactions(true);
+    try {
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+      const transactionsRequest = new Request(
+        `${serverUrl}/v1/developer/wallet/transactions`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      const signedRequest = await context.signRequest(transactionsRequest);
+      const response = await fetch(signedRequest);
+
+      if (response.ok) {
+        const data: TransactionsData = await response.json();
+        setTransactions(data.wallet_transactions || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  const handleTopUp = async (amount: number) => {
+    setProcessingTopUp(true);
+    setTopUpError(null);
+    setTopUpSuccess(false);
+
+    try {
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+
+      // Step 1: Create wallet transaction
+      const topUpRequest = new Request(
+        `${serverUrl}/v1/developer/wallet/topup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ amount })
+        }
+      );
+
+      const signedTopUpRequest = await context.signRequest(topUpRequest);
+      const topUpResponse = await fetch(signedTopUpRequest);
+
+      if (!topUpResponse.ok) {
+        throw new Error("Failed to create top-up transaction");
+      }
+
+      const transactionData = await topUpResponse.json();
+      const transaction = transactionData.wallet_transaction;
+
+      // Step 2: Check transaction status
+      if (transaction.status === "settled") {
+        // Card on file - charge succeeded!
+        setTopUpSuccess(true);
+        setShowCustomInput(false);
+        setCustomAmount("");
+
+        // Refresh balance and transactions
+        await fetchWalletBalance();
+        await fetchTransactions();
+      } else if (transaction.status === "pending") {
+        // No card or payment failed - need checkout
+        const paymentUrlRequest = new Request(
+          `${serverUrl}/v1/developer/wallet/transactions/${transaction.lago_id}/payment-url`,
           {
-            method: "GET",
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
             }
           }
         );
 
-        // Sign the request using Zudoku context (same as CreateApiKey does)
-        const signedRequest = await context.signRequest(walletRequest);
+        const signedPaymentUrlRequest = await context.signRequest(paymentUrlRequest);
+        const paymentUrlResponse = await fetch(signedPaymentUrlRequest);
 
-        // Make the authenticated request
-        const response = await fetch(signedRequest);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch wallet balance");
+        if (!paymentUrlResponse.ok) {
+          throw new Error("Failed to generate payment URL");
         }
 
-        const data: WalletData = await response.json();
+        const paymentData = await paymentUrlResponse.json();
 
-        if (data.wallets && data.wallets.length > 0) {
-          const wallet = data.wallets[0];
-          const creditsBalance = parseFloat(wallet.credits_ongoing_balance || "0");
-          setBalance(creditsBalance.toFixed(2));
-        } else {
-          setBalance("0.00");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
+        // Redirect to Stripe checkout
+        window.location.href = paymentData.payment_url;
       }
-    };
+    } catch (err) {
+      setTopUpError(err instanceof Error ? err.message : "Failed to process top-up");
+    } finally {
+      setProcessingTopUp(false);
+    }
+  };
 
+  const handleCustomTopUp = () => {
+    const amount = parseFloat(customAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setTopUpError("Please enter a valid amount");
+      return;
+    }
+    handleTopUp(amount);
+  };
+
+  useEffect(() => {
     fetchWalletBalance();
+    fetchTransactions();
   }, [auth.isAuthenticated]);
 
   if (!auth.isAuthenticated) {
@@ -93,14 +211,15 @@ export const BillingPage = () => {
   }
 
   return (
-    <section className="container mx-auto px-4 py-8">
+    <section className="container mx-auto px-4 py-8 max-w-4xl">
       <Head>
         <title>Billing - Public AI Gateway</title>
       </Head>
 
       <h1 className="text-3xl font-bold mb-6">Billing</h1>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+      {/* Wallet Balance Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Wallet Balance</h2>
 
         {loading ? (
@@ -125,7 +244,7 @@ export const BillingPage = () => {
             </div>
 
             {balance && parseFloat(balance) <= 0.10 && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4 mt-4">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
                 <p className="text-yellow-800 dark:text-yellow-200 font-medium">
                   Your balance is low. Please add credits to continue using the API.
                 </p>
@@ -135,7 +254,140 @@ export const BillingPage = () => {
         )}
       </div>
 
-      <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
+      {/* Top Up Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Add Credits</h2>
+
+        {topUpSuccess && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 mb-4">
+            <p className="text-green-800 dark:text-green-200 font-medium">
+              Credits added successfully!
+            </p>
+          </div>
+        )}
+
+        {topUpError && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-4">
+            <p className="text-red-800 dark:text-red-200">{topUpError}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Select an amount to add to your wallet:
+          </p>
+
+          {/* Preset Amount Buttons */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[5, 10, 20, 50].map((amount) => (
+              <button
+                key={amount}
+                onClick={() => handleTopUp(amount)}
+                disabled={processingTopUp}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
+              >
+                ${amount}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Amount */}
+          {!showCustomInput ? (
+            <button
+              onClick={() => setShowCustomInput(true)}
+              className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
+            >
+              Enter custom amount
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={customAmount}
+                onChange={(e) => setCustomAmount(e.target.value)}
+                placeholder="Enter amount"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
+              <button
+                onClick={handleCustomTopUp}
+                disabled={processingTopUp || !customAmount}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-md transition-colors disabled:cursor-not-allowed"
+              >
+                Add
+              </button>
+              <button
+                onClick={() => {
+                  setShowCustomInput(false);
+                  setCustomAmount("");
+                }}
+                className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {processingTopUp && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Processing your payment...
+            </p>
+          )}
+
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            If you have a card on file, you'll be charged immediately. Otherwise, you'll be redirected to complete payment setup.
+          </p>
+        </div>
+      </div>
+
+      {/* Transaction History */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
+
+        {loadingTransactions ? (
+          <p className="text-gray-600 dark:text-gray-400">Loading transactions...</p>
+        ) : transactions.length === 0 ? (
+          <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
+        ) : (
+          <div className="space-y-3">
+            {transactions.slice(0, 10).map((tx) => (
+              <div
+                key={tx.lago_id}
+                className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700 last:border-0"
+              >
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {tx.transaction_type === "inbound" ? "Top up" : "Usage"}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(tx.created_at).toLocaleDateString()} at{" "}
+                    {new Date(tx.created_at).toLocaleTimeString()}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Status: {tx.status}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p
+                    className={`font-semibold ${
+                      tx.transaction_type === "inbound"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {tx.transaction_type === "inbound" ? "+" : "-"}$
+                    {parseFloat(tx.credit_amount || tx.amount || "0").toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Info Section */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
         <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
           How billing works
         </h3>
@@ -144,6 +396,7 @@ export const BillingPage = () => {
           <li>• Credits are deducted based on your API usage</li>
           <li>• You'll be notified when your balance is low</li>
           <li>• Requests are blocked when balance reaches $0.10 or below</li>
+          <li>• $1 USD = 1 credit (simple 1:1 ratio)</li>
         </ul>
       </div>
     </section>
