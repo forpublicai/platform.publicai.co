@@ -75,6 +75,8 @@ export const BillingPage = () => {
   const auth = useAuth();
   const context = useZudoku();
   const [balance, setBalance] = useState<string | null>(null);
+  const [totalCredits, setTotalCredits] = useState<string | null>(null);
+  const [currentUsage, setCurrentUsage] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
@@ -117,14 +119,28 @@ export const BillingPage = () => {
 
       const data: WalletData = await response.json();
 
-      // Set balance
+      // Get total credits from wallet
+      let walletCredits = 0;
       if (data.wallets && data.wallets.length > 0) {
         const wallet = data.wallets[0];
-        const creditsBalance = parseFloat(wallet.credits_ongoing_balance || "0");
-        setBalance(creditsBalance.toFixed(2));
+        walletCredits = parseFloat(wallet.credits_balance || "0");
+        setTotalCredits(walletCredits.toFixed(2));
       } else {
-        setBalance("0.00");
+        setTotalCredits("0.00");
       }
+
+      // Get current usage amount from customer_usage
+      let usageAmount = 0;
+      if (data.current_usage?.customer_usage?.amount_cents) {
+        usageAmount = data.current_usage.customer_usage.amount_cents / 100;
+        setCurrentUsage(usageAmount);
+      } else {
+        setCurrentUsage(0);
+      }
+
+      // Calculate remaining balance = total credits - current usage
+      const remainingBalance = walletCredits - usageAmount;
+      setBalance(remainingBalance.toFixed(2));
 
       // Set payment method status
       setHasPaymentMethod(data.hasPaymentMethod || false);
@@ -391,15 +407,33 @@ export const BillingPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-baseline">
-              <span className="text-4xl font-bold text-green-600 dark:text-green-400">
-                ${balance}
-              </span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">USD</span>
+            {/* Remaining Balance (Primary Display) */}
+            <div>
+              <div className="flex items-baseline">
+                <span className="text-4xl font-bold text-green-600 dark:text-green-400">
+                  ${balance}
+                </span>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">USD</span>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p>Remaining credits available</p>
+              </div>
             </div>
 
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              <p>Available credits in your wallet</p>
+            {/* Breakdown */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Total credits:</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">${totalCredits}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Current billing period usage:</span>
+                <span className="font-medium text-red-600 dark:text-red-400">-${currentUsage.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm font-semibold border-t border-gray-200 dark:border-gray-700 pt-2">
+                <span className="text-gray-900 dark:text-gray-100">Remaining balance:</span>
+                <span className="text-gray-900 dark:text-gray-100">${balance}</span>
+              </div>
             </div>
 
             {balance && parseFloat(balance) <= 0.10 && (
