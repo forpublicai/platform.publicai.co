@@ -1,4 +1,5 @@
 import { ZuploContext, ZuploRequest, environment } from "@zuplo/runtime";
+import { provisionCustomer } from "./customer-provisioning";
 
 export default async function (
   request: ZuploRequest,
@@ -88,7 +89,7 @@ export default async function (
 
   try {
     // Fetch wallet balance from Lago API
-    const checkWalletResponse = await fetch(
+    let checkWalletResponse = await fetch(
       `${environment.LAGO_API_BASE}/api/v1/wallets?external_customer_id=${userId}`,
       {
         method: "GET",
@@ -98,6 +99,46 @@ export default async function (
         }
       }
     );
+
+    // If customer not found (404), provision them
+    if (checkWalletResponse.status === 404) {
+      context.log.info(`Customer ${userId} not found in Lago, provisioning...`);
+
+      const provisionResult = await provisionCustomer(userId, context);
+
+      if (!provisionResult.success) {
+        context.log.error(`Failed to provision customer: ${provisionResult.error}`);
+        return new Response(
+          JSON.stringify({
+            error: {
+              message: "Failed to provision customer account",
+              type: "provisioning_error",
+              details: provisionResult.error
+            }
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }
+        );
+      }
+
+      context.log.info(`Customer ${userId} provisioned successfully, fetching wallet data...`);
+
+      // Retry fetching wallet after provisioning
+      checkWalletResponse = await fetch(
+        `${environment.LAGO_API_BASE}/api/v1/wallets?external_customer_id=${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+    }
 
     if (!checkWalletResponse.ok) {
       const error = await checkWalletResponse.text();
