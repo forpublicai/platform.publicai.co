@@ -1,7 +1,6 @@
 import { Head } from "zudoku/components";
 import { useAuth, useZudoku } from "zudoku/hooks";
 import { useEffect, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "zudoku/ui/Alert";
 
 interface WalletData {
   wallets: Array<{
@@ -90,7 +89,6 @@ export const BillingPage = () => {
   const [topUpError, setTopUpError] = useState<string | null>(null);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
   const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
-  const [showRedirectMessage, setShowRedirectMessage] = useState(false);
 
   const fetchWalletBalance = async () => {
     if (!auth.isAuthenticated) {
@@ -120,14 +118,8 @@ export const BillingPage = () => {
         const errorData = await response.json().catch(() => ({}));
 
         if (errorData.error?.type === "api_key_required") {
-          // Show redirect message and redirect after 3 seconds
-          setShowRedirectMessage(true);
-          setLoading(false);
-          setLoadingTransactions(false);
-
-          setTimeout(() => {
-            window.location.href = "/settings/api-keys";
-          }, 3000);
+          // Redirect immediately to API keys page
+          window.location.href = "/settings/api-keys";
           return;
         }
 
@@ -392,16 +384,6 @@ export const BillingPage = () => {
       </Head>
 
       <h1 className="text-3xl font-bold mb-6">Billing</h1>
-
-      {/* Redirect Message Alert */}
-      {showRedirectMessage && (
-        <Alert className="mb-6">
-          <AlertTitle>Create Your First API Key</AlertTitle>
-          <AlertDescription>
-            To access billing information, you need to create an API key first. Redirecting you to the API keys page in 3 seconds...
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Development Warning */}
       <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg p-4 mb-6">
