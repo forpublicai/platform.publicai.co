@@ -50,24 +50,15 @@ interface ChargeUsage {
     name: string;
     code: string;
   };
-  groups?: UsageGroup[];
-}
-
-interface UsageGroup {
-  lago_id: string;
-  key: string;
-  value: string;
-  units: string;
-  amount_cents: number;
-  events_count: number;
   filters?: Array<{
-    id: string;
-    invoice_display_name: string | null;
-    values: Record<string, string[]>;
     units: string;
-    amount_cents: number;
     events_count: number;
+    amount_cents: number;
+    pricing_unit_details: string | null;
+    invoice_display_name: string | null;
+    values: Record<string, string[]> | null;
   }>;
+  grouped_usage?: Array<any>;
 }
 
 interface ModelUsage {
@@ -146,42 +137,42 @@ export const BillingPage = () => {
         const usageMap = new Map<string, ModelUsage>();
 
         for (const charge of data.current_usage.customer_usage.charges_usage) {
-          if (charge.groups) {
-            for (const group of charge.groups) {
-              if (group.filters) {
-                for (const filter of group.filters) {
-                  const modelName = filter.values.model?.[0];
-                  const tokenType = filter.values.type?.[0];
+          // Process filters directly (they're at the top level now)
+          if (charge.filters) {
+            for (const filter of charge.filters) {
+              // Skip filters without values (null values)
+              if (!filter.values) continue;
 
-                  if (modelName && tokenType) {
-                    if (!usageMap.has(modelName)) {
-                      usageMap.set(modelName, {
-                        model: modelName,
-                        inputTokens: 0,
-                        outputTokens: 0,
-                        totalTokens: 0,
-                        inputCost: 0,
-                        outputCost: 0,
-                        totalCost: 0
-                      });
-                    }
+              const modelName = filter.values.model?.[0];
+              const tokenType = filter.values.type?.[0];
 
-                    const usage = usageMap.get(modelName)!;
-                    const tokens = parseFloat(filter.units) || 0;
-                    const cost = filter.amount_cents / 100;
-
-                    if (tokenType === "input") {
-                      usage.inputTokens += tokens;
-                      usage.inputCost += cost;
-                    } else if (tokenType === "output") {
-                      usage.outputTokens += tokens;
-                      usage.outputCost += cost;
-                    }
-
-                    usage.totalTokens = usage.inputTokens + usage.outputTokens;
-                    usage.totalCost = usage.inputCost + usage.outputCost;
-                  }
+              if (modelName && tokenType) {
+                if (!usageMap.has(modelName)) {
+                  usageMap.set(modelName, {
+                    model: modelName,
+                    inputTokens: 0,
+                    outputTokens: 0,
+                    totalTokens: 0,
+                    inputCost: 0,
+                    outputCost: 0,
+                    totalCost: 0
+                  });
                 }
+
+                const usage = usageMap.get(modelName)!;
+                const tokens = parseFloat(filter.units) || 0;
+                const cost = filter.amount_cents / 100;
+
+                if (tokenType === "input") {
+                  usage.inputTokens += tokens;
+                  usage.inputCost += cost;
+                } else if (tokenType === "output") {
+                  usage.outputTokens += tokens;
+                  usage.outputCost += cost;
+                }
+
+                usage.totalTokens = usage.inputTokens + usage.outputTokens;
+                usage.totalCost = usage.inputCost + usage.outputCost;
               }
             }
           }

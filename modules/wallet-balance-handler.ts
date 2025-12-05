@@ -177,7 +177,7 @@ export default async function (
     let currentUsage = null;
     try {
       const usageResponse = await fetch(
-        `${environment.LAGO_API_BASE}/api/v1/customers/${userId}/current_usage`,
+        `${environment.LAGO_API_BASE}/api/v1/customers/${userId}/current_usage?external_subscription_id=${userId}`,
         {
           method: "GET",
           headers: {
