@@ -70,8 +70,8 @@ export default async function (
     return new Response(
       JSON.stringify({
         error: {
-          message: "User account not found. Please create an API key first.",
-          type: "user_not_found"
+          message: "To access billing information, please create your first API key. Once you've created an API key, you'll be able to view your wallet balance, add credits, and manage payment methods.",
+          type: "api_key_required"
         }
       }),
       {
