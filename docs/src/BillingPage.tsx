@@ -105,6 +105,43 @@ export const BillingPage = () => {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState<string>("10");
   const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
+  const [billingPeriod, setBillingPeriod] = useState<{from: string; to: string} | null>(null);
+
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffHours < 1) {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return diffMinutes <= 1 ? "just now" : `${diffMinutes} minutes ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    } else if (diffDays <= 3) {
+      return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    } else {
+      // Format as "8th Dec 2025"
+      const day = date.getDate();
+      const suffix = day === 1 || day === 21 || day === 31 ? 'st' :
+                     day === 2 || day === 22 ? 'nd' :
+                     day === 3 || day === 23 ? 'rd' : 'th';
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const year = date.getFullYear();
+      return `${day}${suffix} ${month} ${year}`;
+    }
+  };
+
+  const formatBillingPeriodDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const suffix = day === 1 || day === 21 || day === 31 ? 'st' :
+                   day === 2 || day === 22 ? 'nd' :
+                   day === 3 || day === 23 ? 'rd' : 'th';
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    return `${day}${suffix} ${month}`;
+  };
 
   const fetchWalletBalance = async () => {
     if (!auth.isAuthenticated) {
@@ -177,6 +214,14 @@ export const BillingPage = () => {
       // Parse usage data
       if (data.current_usage?.customer_usage?.charges_usage) {
         const usageMap = new Map<string, ModelUsage>();
+
+        // Capture billing period
+        if (data.current_usage.customer_usage.from_datetime && data.current_usage.customer_usage.to_datetime) {
+          setBillingPeriod({
+            from: data.current_usage.customer_usage.from_datetime,
+            to: data.current_usage.customer_usage.to_datetime
+          });
+        }
 
         for (const charge of data.current_usage.customer_usage.charges_usage) {
           // Process filters directly (they're at the top level now)
@@ -336,8 +381,8 @@ export const BillingPage = () => {
 
   const handleConfirmTopUp = async () => {
     const amount = parseFloat(topUpAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setTopUpError("Please enter a valid amount");
+    if (isNaN(amount) || amount < 1) {
+      setTopUpError("Minimum top-up amount is $1");
       return;
     }
 
@@ -496,9 +541,6 @@ export const BillingPage = () => {
                 </span>
                 <span className="ml-2 text-gray-600 dark:text-gray-400">USD</span>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                <p>Remaining credits available</p>
-              </div>
             </div>
 
             {/* Breakdown */}
@@ -625,28 +667,37 @@ export const BillingPage = () => {
 
       {/* Model Usage Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Current Billing Period Usage</h2>
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold">Current Billing Period Usage</h2>
+          {billingPeriod && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {formatBillingPeriodDate(billingPeriod.from)} - {formatBillingPeriodDate(billingPeriod.to)}
+            </p>
+          )}
+        </div>
 
         {loadingTransactions ? (
           <p className="text-gray-600 dark:text-gray-400">Loading usage data...</p>
-        ) : modelUsage.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">No usage data for this billing period yet</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
-                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Tokens</th>
-                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Tokens</th>
-                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Total Tokens</th>
-                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {modelUsage
-                  .sort((a, b) => b.totalCost - a.totalCost)
-                  .map((usage) => (
+        ) : (() => {
+          const usedModels = modelUsage.filter(usage => usage.totalTokens > 0);
+          return usedModels.length === 0 ? (
+            <p className="text-gray-600 dark:text-gray-400">No usage data for this billing period yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Total Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usedModels
+                    .sort((a, b) => b.totalCost - a.totalCost)
+                    .map((usage) => (
                     <tr
                       key={usage.model}
                       className="border-b border-gray-200 dark:border-gray-700 last:border-0"
@@ -679,22 +730,23 @@ export const BillingPage = () => {
                 <tr className="border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
                   <td className="py-3 px-2 text-gray-900 dark:text-gray-100">Total</td>
                   <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
-                    {modelUsage.reduce((sum, u) => sum + u.inputTokens, 0).toLocaleString()}
+                    {usedModels.reduce((sum, u) => sum + u.inputTokens, 0).toLocaleString()}
                   </td>
                   <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
-                    {modelUsage.reduce((sum, u) => sum + u.outputTokens, 0).toLocaleString()}
+                    {usedModels.reduce((sum, u) => sum + u.outputTokens, 0).toLocaleString()}
                   </td>
                   <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
-                    {modelUsage.reduce((sum, u) => sum + u.totalTokens, 0).toLocaleString()}
+                    {usedModels.reduce((sum, u) => sum + u.totalTokens, 0).toLocaleString()}
                   </td>
                   <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
-                    ${modelUsage.reduce((sum, u) => sum + u.totalCost, 0).toFixed(4)}
+                    ${usedModels.reduce((sum, u) => sum + u.totalCost, 0).toFixed(4)}
                   </td>
                 </tr>
               </tfoot>
             </table>
           </div>
-        )}
+        );
+        })()}
       </div>
 
       {/* Transaction History */}
@@ -703,62 +755,37 @@ export const BillingPage = () => {
 
         {loadingTransactions ? (
           <p className="text-gray-600 dark:text-gray-400">Loading transactions...</p>
-        ) : transactions.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
-        ) : (
-          <div className="space-y-3">
-            {transactions.slice(0, 10).map((tx) => (
-              <div
-                key={tx.lago_id}
-                className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700 last:border-0"
-              >
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    {tx.transaction_type === "inbound" ? "Top up" : "Usage"}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(tx.created_at).toLocaleDateString()} at{" "}
-                    {new Date(tx.created_at).toLocaleTimeString()}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Status: {tx.status}
-                  </p>
+        ) : (() => {
+          const settledTransactions = transactions.filter(tx => tx.status === "settled");
+          return settledTransactions.length === 0 ? (
+            <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
+          ) : (
+            <div className="space-y-3">
+              {settledTransactions.slice(0, 10).map((tx) => (
+                <div
+                  key={tx.lago_id}
+                  className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700 last:border-0"
+                >
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {formatRelativeTime(tx.created_at)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-green-600 dark:text-green-400">
+                      +${parseFloat(tx.credit_amount || tx.amount || "0").toFixed(2)}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p
-                    className={`font-semibold ${
-                      tx.transaction_type === "inbound"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {tx.transaction_type === "inbound" ? "+" : "-"}$
-                    {parseFloat(tx.credit_amount || tx.amount || "0").toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Info Section */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-          How billing works
-        </h3>
-        <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-          <li>• New users receive $10 in free credits</li>
-          <li>• Credits are deducted based on your API usage</li>
-          <li>• You'll be notified when your balance is low</li>
-          <li>• Requests are blocked when balance reaches $0.10 or below</li>
-          <li>• $1 USD = 1 credit (simple 1:1 ratio)</li>
-        </ul>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Delete Payment Method
@@ -786,7 +813,7 @@ export const BillingPage = () => {
 
       {/* Top Up Modal */}
       {showTopUpModal && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Top Up Credits
