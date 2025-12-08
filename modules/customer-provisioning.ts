@@ -90,10 +90,11 @@ export async function provisionCustomer(
         body: JSON.stringify({
           wallet: {
             external_customer_id: userId,
-            name: "Welcome Credits",
+            name: "Prepaid Credits",
             rate_amount: "1.0",
             currency: "USD",
-            granted_credits: "10.0"
+            granted_credits: "10.0",
+            transaction_name: "Welcome to Public AI!"
           }
         })
       }

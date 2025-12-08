@@ -192,7 +192,8 @@ export default async function (
           wallet_transaction: {
             wallet_id: walletId,
             paid_credits: topUpData.amount.toFixed(2),
-            granted_credits: "0.0"
+            granted_credits: "0.0",
+            name: "Prepaid Top-up"
           }
         })
       }

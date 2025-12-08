@@ -579,93 +579,77 @@ export const BillingPage = () => {
               </div>
             )}
 
-            <button
-              onClick={openTopUpModal}
-              disabled={!hasPaymentMethod}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
-            >
-              {!hasPaymentMethod ? "Add Payment Method First" : "Top Up Credits"}
-            </button>
+            {hasPaymentMethod ? (
+              <button
+                onClick={openTopUpModal}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                Top Up Credits
+              </button>
+            ) : (
+              <button
+                onClick={handleAddPaymentMethod}
+                disabled={processingPaymentSetup}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
+              >
+                {processingPaymentSetup ? "Redirecting..." : "Add Payment Method"}
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {/* Payment Method Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+      {/* Payment Method Section - Only show if user has payment methods */}
+      {paymentMethods.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
 
-        <div className="space-y-4">
-          {paymentMethods.length > 0 ? (
-            <>
-              {(() => {
-                const pm = paymentMethods[0];
-                return (
-                  <div
-                    key={pm.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      {pm.card && (
-                        <>
-                          <div className="text-gray-900 dark:text-gray-100">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                              {pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• {pm.card.last4}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Expires {pm.card.exp_month}/{pm.card.exp_year}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleDeletePaymentMethod(pm.id)}
-                      disabled={deletingPaymentMethod === pm.id}
-                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {deletingPaymentMethod === pm.id ? "Deleting..." : "Delete"}
-                    </button>
+          <div className="space-y-4">
+            {(() => {
+              const pm = paymentMethods[0];
+              return (
+                <div
+                  key={pm.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {pm.card && (
+                      <>
+                        <div className="text-gray-900 dark:text-gray-100">
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                            {pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• {pm.card.last4}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Expires {pm.card.exp_month}/{pm.card.exp_year}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
-                );
-              })()}
-            </>
-          ) : (
-            <>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
-                <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
-                  No payment method on file
-                </p>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  You need to add a payment method before you can top up your wallet.
-                </p>
+                  <button
+                    onClick={() => handleDeletePaymentMethod(pm.id)}
+                    disabled={deletingPaymentMethod === pm.id}
+                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingPaymentMethod === pm.id ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              );
+            })()}
+
+            {topUpError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                <p className="text-red-800 dark:text-red-200">{topUpError}</p>
               </div>
-
-              <button
-                onClick={handleAddPaymentMethod}
-                disabled={processingPaymentSetup}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed w-full sm:w-auto"
-              >
-                {processingPaymentSetup ? "Redirecting..." : "Add Payment Method"}
-              </button>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                You'll be redirected to Stripe to securely add your payment details.
-              </p>
-            </>
-          )}
-
-          {topUpError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-              <p className="text-red-800 dark:text-red-200">{topUpError}</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
 
       {/* Model Usage Section */}
@@ -782,10 +766,11 @@ export const BillingPage = () => {
                   <div className="text-right">
                     {(() => {
                       const amount = parseFloat(tx.credit_amount || tx.amount || "0");
-                      const isPositive = amount >= 0;
+                      const isOutbound = tx.transaction_type === "outbound";
+                      const displayAmount = isOutbound ? -Math.abs(amount) : Math.abs(amount);
                       return (
-                        <p className={`font-semibold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {isPositive ? '+' : ''}${amount.toFixed(2)}
+                        <p className={`font-semibold ${isOutbound ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                          {isOutbound ? '' : '+'}${displayAmount.toFixed(2)}
                         </p>
                       );
                     })()}
@@ -848,7 +833,7 @@ export const BillingPage = () => {
                 <input
                   id="topUpAmount"
                   type="number"
-                  min="0.01"
+                  min="1"
                   step="0.01"
                   value={topUpAmount}
                   onChange={(e) => setTopUpAmount(e.target.value)}
@@ -857,7 +842,7 @@ export const BillingPage = () => {
                 />
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Your payment method will be charged immediately.
+                Minimum top-up amount is $1. Your payment method will be charged immediately.
               </p>
             </div>
 
@@ -877,7 +862,7 @@ export const BillingPage = () => {
               </button>
               <button
                 onClick={handleConfirmTopUp}
-                disabled={processingTopUp || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                disabled={processingTopUp || !topUpAmount || parseFloat(topUpAmount) < 1}
                 className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {processingTopUp ? "Processing..." : "Confirm"}
