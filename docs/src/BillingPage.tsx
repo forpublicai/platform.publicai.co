@@ -11,8 +11,20 @@ interface WalletData {
     currency: string;
   }>;
   hasPaymentMethod: boolean;
+  payment_methods?: PaymentMethod[];
   wallet_transactions: WalletTransaction[];
   current_usage?: CurrentUsage;
+}
+
+interface PaymentMethod {
+  id: string;
+  type: string;
+  card?: {
+    brand: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+  };
 }
 
 interface WalletTransaction {
@@ -88,6 +100,8 @@ export const BillingPage = () => {
   const [topUpSuccess, setTopUpSuccess] = useState(false);
   const [topUpError, setTopUpError] = useState<string | null>(null);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [deletingPaymentMethod, setDeletingPaymentMethod] = useState<string | null>(null);
   const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
 
   const fetchWalletBalance = async () => {
@@ -151,8 +165,9 @@ export const BillingPage = () => {
       const remainingBalance = walletCredits - usageAmount;
       setBalance(remainingBalance.toFixed(2));
 
-      // Set payment method status
+      // Set payment method status and methods list
       setHasPaymentMethod(data.hasPaymentMethod || false);
+      setPaymentMethods(data.payment_methods || []);
 
       // Set transactions
       setTransactions(data.wallet_transactions || []);
@@ -251,6 +266,43 @@ export const BillingPage = () => {
       setTopUpError(err instanceof Error ? err.message : "Failed to setup payment method");
     } finally {
       setProcessingPaymentSetup(false);
+    }
+  };
+
+  const handleDeletePaymentMethod = async (paymentMethodId: string) => {
+    if (!confirm("Are you sure you want to delete this payment method?")) {
+      return;
+    }
+
+    setDeletingPaymentMethod(paymentMethodId);
+    setTopUpError(null);
+
+    try {
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+
+      const deleteRequest = new Request(
+        `${serverUrl}/v1/developer/wallet/payment-method/${paymentMethodId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      const signedRequest = await context.signRequest(deleteRequest);
+      const response = await fetch(signedRequest);
+
+      if (!response.ok) {
+        throw new Error("Failed to delete payment method");
+      }
+
+      // Refresh wallet data to update payment methods list
+      await fetchWalletBalance();
+    } catch (err) {
+      setTopUpError(err instanceof Error ? err.message : "Failed to delete payment method");
+    } finally {
+      setDeletingPaymentMethod(null);
     }
   };
 
@@ -456,41 +508,89 @@ export const BillingPage = () => {
         )}
       </div>
 
-      {/* Payment Method Setup Section */}
-      {!hasPaymentMethod && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+      {/* Payment Method Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
 
-          <div className="space-y-4">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
-              <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
-                No payment method on file
-              </p>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                You need to add a payment method before you can top up your wallet.
-              </p>
-            </div>
-
-            {topUpError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-                <p className="text-red-800 dark:text-red-200">{topUpError}</p>
+        <div className="space-y-4">
+          {paymentMethods.length > 0 ? (
+            <>
+              <div className="space-y-3">
+                {paymentMethods.map((pm) => (
+                  <div
+                    key={pm.id}
+                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {pm.card && (
+                        <>
+                          <div className="text-gray-900 dark:text-gray-100">
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">
+                              {pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• {pm.card.last4}
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Expires {pm.card.exp_month}/{pm.card.exp_year}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeletePaymentMethod(pm.id)}
+                      disabled={deletingPaymentMethod === pm.id}
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingPaymentMethod === pm.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                ))}
               </div>
-            )}
 
-            <button
-              onClick={handleAddPaymentMethod}
-              disabled={processingPaymentSetup}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed w-full sm:w-auto"
-            >
-              {processingPaymentSetup ? "Redirecting..." : "Add Payment Method"}
-            </button>
+              <button
+                onClick={handleAddPaymentMethod}
+                disabled={processingPaymentSetup}
+                className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {processingPaymentSetup ? "Redirecting..." : "+ Add another payment method"}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+                <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
+                  No payment method on file
+                </p>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  You need to add a payment method before you can top up your wallet.
+                </p>
+              </div>
 
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              You'll be redirected to Stripe to securely add your payment details.
-            </p>
-          </div>
+              <button
+                onClick={handleAddPaymentMethod}
+                disabled={processingPaymentSetup}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed w-full sm:w-auto"
+              >
+                {processingPaymentSetup ? "Redirecting..." : "Add Payment Method"}
+              </button>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                You'll be redirected to Stripe to securely add your payment details.
+              </p>
+            </>
+          )}
+
+          {topUpError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+              <p className="text-red-800 dark:text-red-200">{topUpError}</p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Top Up Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
@@ -501,12 +601,6 @@ export const BillingPage = () => {
             <p className="text-green-800 dark:text-green-200 font-medium">
               Credits added successfully!
             </p>
-          </div>
-        )}
-
-        {topUpError && hasPaymentMethod && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4 mb-4">
-            <p className="text-red-800 dark:text-red-200">{topUpError}</p>
           </div>
         )}
 

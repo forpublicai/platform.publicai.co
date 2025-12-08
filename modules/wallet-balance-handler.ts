@@ -166,6 +166,7 @@ export default async function (
 
     // Check Stripe for payment methods
     let hasPaymentMethod = false;
+    let paymentMethods: any[] = [];
     try {
       // First, search for the Stripe customer by name (userId is set as the customer name)
       const searchQuery = `name:'${userId}'`;
@@ -198,8 +199,9 @@ export default async function (
 
           if (paymentMethodsResponse.ok) {
             const paymentMethodsData = await paymentMethodsResponse.json();
-            hasPaymentMethod = paymentMethodsData.data && paymentMethodsData.data.length > 0;
-            context.log.info(`Customer has ${paymentMethodsData.data?.length || 0} payment method(s)`);
+            paymentMethods = paymentMethodsData.data || [];
+            hasPaymentMethod = paymentMethods.length > 0;
+            context.log.info(`Customer has ${paymentMethods.length} payment method(s)`);
           } else {
             context.log.warn(`Failed to fetch payment methods from Stripe`);
           }
@@ -274,6 +276,7 @@ export default async function (
       JSON.stringify({
         ...walletData,
         hasPaymentMethod,
+        payment_methods: paymentMethods,
         wallet_transactions: walletTransactions,
         current_usage: currentUsage
       }),

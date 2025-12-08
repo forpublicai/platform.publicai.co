@@ -210,6 +210,52 @@
         "operationId": "setup-payment-endpoint",
         "x-internal": true
       }
+    },
+    "/v1/developer/wallet/payment-method/:paymentMethodId": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "delete": {
+        "summary": "Delete payment method",
+        "description": "Detaches a payment method from the customer's account",
+        "parameters": [
+          {
+            "name": "paymentMethodId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The ID of the payment method to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletePaymentMethodResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/delete-payment-method-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "delete-payment-method-endpoint",
+        "x-internal": true
+      }
     }
   },
   "components": {
@@ -275,6 +321,44 @@
           "hasPaymentMethod": {
             "type": "boolean",
             "description": "Whether the customer has a payment method on file"
+          },
+          "payment_methods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Payment method ID"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Payment method type (e.g., 'card')"
+                },
+                "card": {
+                  "type": "object",
+                  "properties": {
+                    "brand": {
+                      "type": "string",
+                      "description": "Card brand (e.g., 'visa', 'mastercard')"
+                    },
+                    "last4": {
+                      "type": "string",
+                      "description": "Last 4 digits of card number"
+                    },
+                    "exp_month": {
+                      "type": "integer",
+                      "description": "Expiration month"
+                    },
+                    "exp_year": {
+                      "type": "integer",
+                      "description": "Expiration year"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Customer's saved payment methods"
           },
           "wallet_transactions": {
             "type": "array",
@@ -397,6 +481,19 @@
           "checkout_url": {
             "type": "string",
             "description": "Stripe payment setup URL"
+          }
+        }
+      },
+      "DeletePaymentMethodResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the payment method was successfully deleted"
+          },
+          "payment_method": {
+            "type": "object",
+            "description": "The detached payment method"
           }
         }
       }
