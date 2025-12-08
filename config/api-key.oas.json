@@ -211,7 +211,7 @@
         "x-internal": true
       }
     },
-    "/v1/developer/wallet/payment-method/:paymentMethodId": {
+    "/v1/developer/wallet/payment-method/{paymentMethodId}": {
       "x-zuplo-path": {
         "pathMode": "open-api"
       },

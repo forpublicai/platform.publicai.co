@@ -29,10 +29,8 @@ export default async function (
   const authSub = request.user.sub;
   context.log.info(`Authenticated user sub: ${authSub}`);
 
-  // Extract payment method ID from URL path
-  const url = new URL(request.url);
-  const pathParts = url.pathname.split('/');
-  const paymentMethodId = pathParts[pathParts.length - 1];
+  // Extract payment method ID from path parameter
+  const paymentMethodId = request.params.paymentMethodId;
 
   if (!paymentMethodId) {
     return new Response(

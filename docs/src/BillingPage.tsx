@@ -102,6 +102,8 @@ export const BillingPage = () => {
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [deletingPaymentMethod, setDeletingPaymentMethod] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [paymentMethodToDelete, setPaymentMethodToDelete] = useState<string | null>(null);
   const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
 
   const fetchWalletBalance = async () => {
@@ -270,18 +272,22 @@ export const BillingPage = () => {
   };
 
   const handleDeletePaymentMethod = async (paymentMethodId: string) => {
-    if (!confirm("Are you sure you want to delete this payment method?")) {
-      return;
-    }
+    setPaymentMethodToDelete(paymentMethodId);
+    setShowDeleteConfirm(true);
+  };
 
-    setDeletingPaymentMethod(paymentMethodId);
+  const confirmDeletePaymentMethod = async () => {
+    if (!paymentMethodToDelete) return;
+
+    setDeletingPaymentMethod(paymentMethodToDelete);
+    setShowDeleteConfirm(false);
     setTopUpError(null);
 
     try {
       const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
 
       const deleteRequest = new Request(
-        `${serverUrl}/v1/developer/wallet/payment-method/${paymentMethodId}`,
+        `${serverUrl}/v1/developer/wallet/payment-method/${paymentMethodToDelete}`,
         {
           method: "DELETE",
           headers: {
@@ -303,7 +309,13 @@ export const BillingPage = () => {
       setTopUpError(err instanceof Error ? err.message : "Failed to delete payment method");
     } finally {
       setDeletingPaymentMethod(null);
+      setPaymentMethodToDelete(null);
     }
+  };
+
+  const cancelDeletePaymentMethod = () => {
+    setShowDeleteConfirm(false);
+    setPaymentMethodToDelete(null);
   };
 
   const handleTopUp = async (amount: number) => {
@@ -510,13 +522,14 @@ export const BillingPage = () => {
 
       {/* Payment Method Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Payment Methods</h2>
+        <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
 
         <div className="space-y-4">
           {paymentMethods.length > 0 ? (
             <>
-              <div className="space-y-3">
-                {paymentMethods.map((pm) => (
+              {(() => {
+                const pm = paymentMethods[0];
+                return (
                   <div
                     key={pm.id}
                     className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
@@ -548,16 +561,8 @@ export const BillingPage = () => {
                       {deletingPaymentMethod === pm.id ? "Deleting..." : "Delete"}
                     </button>
                   </div>
-                ))}
-              </div>
-
-              <button
-                onClick={handleAddPaymentMethod}
-                disabled={processingPaymentSetup}
-                className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {processingPaymentSetup ? "Redirecting..." : "+ Add another payment method"}
-              </button>
+                );
+              })()}
             </>
           ) : (
             <>
@@ -813,6 +818,34 @@ export const BillingPage = () => {
           <li>• $1 USD = 1 credit (simple 1:1 ratio)</li>
         </ul>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Delete Payment Method
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this payment method? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDeletePaymentMethod}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeletePaymentMethod}
+                className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
