@@ -34,6 +34,8 @@ interface WalletTransaction {
   amount: string;
   credit_amount: string;
   created_at: string;
+  name?: string;
+  source?: string;
 }
 
 interface CurrentUsage {
@@ -140,7 +142,8 @@ export const BillingPage = () => {
                    day === 2 || day === 22 ? 'nd' :
                    day === 3 || day === 23 ? 'rd' : 'th';
     const month = date.toLocaleDateString('en-US', { month: 'short' });
-    return `${day}${suffix} ${month}`;
+    const year = date.getFullYear();
+    return `${day}${suffix} ${month} ${year}`;
   };
 
   const fetchWalletBalance = async () => {
@@ -767,14 +770,25 @@ export const BillingPage = () => {
                   className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700 last:border-0"
                 >
                   <div>
+                    {tx.name && (
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {tx.name}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {formatRelativeTime(tx.created_at)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-green-600 dark:text-green-400">
-                      +${parseFloat(tx.credit_amount || tx.amount || "0").toFixed(2)}
-                    </p>
+                    {(() => {
+                      const amount = parseFloat(tx.credit_amount || tx.amount || "0");
+                      const isPositive = amount >= 0;
+                      return (
+                        <p className={`font-semibold ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {isPositive ? '+' : ''}${amount.toFixed(2)}
+                        </p>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
