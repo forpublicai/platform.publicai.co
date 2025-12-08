@@ -93,8 +93,6 @@ export const BillingPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
-  const [customAmount, setCustomAmount] = useState<string>("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
   const [processingTopUp, setProcessingTopUp] = useState(false);
   const [processingPaymentSetup, setProcessingPaymentSetup] = useState(false);
   const [topUpSuccess, setTopUpSuccess] = useState(false);
@@ -104,6 +102,8 @@ export const BillingPage = () => {
   const [deletingPaymentMethod, setDeletingPaymentMethod] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [paymentMethodToDelete, setPaymentMethodToDelete] = useState<string | null>(null);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState<string>("10");
   const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
 
   const fetchWalletBalance = async () => {
@@ -318,9 +318,26 @@ export const BillingPage = () => {
     setPaymentMethodToDelete(null);
   };
 
-  const handleTopUp = async (amount: number) => {
+  const openTopUpModal = () => {
     if (!hasPaymentMethod) {
       setTopUpError("Please add a payment method first");
+      return;
+    }
+    setTopUpAmount("10");
+    setTopUpError(null);
+    setTopUpSuccess(false);
+    setShowTopUpModal(true);
+  };
+
+  const closeTopUpModal = () => {
+    setShowTopUpModal(false);
+    setTopUpAmount("10");
+  };
+
+  const handleConfirmTopUp = async () => {
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setTopUpError("Please enter a valid amount");
       return;
     }
 
@@ -395,8 +412,8 @@ export const BillingPage = () => {
       if (transaction.status === "settled") {
         // Charge succeeded!
         setTopUpSuccess(true);
-        setShowCustomInput(false);
-        setCustomAmount("");
+        setShowTopUpModal(false);
+        setTopUpAmount("10");
 
         // Refresh wallet data (balance, payment method, and transactions)
         await fetchWalletBalance();
@@ -412,15 +429,6 @@ export const BillingPage = () => {
     } finally {
       setProcessingTopUp(false);
     }
-  };
-
-  const handleCustomTopUp = () => {
-    const amount = parseFloat(customAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setTopUpError("Please enter a valid amount");
-      return;
-    }
-    handleTopUp(amount);
   };
 
   useEffect(() => {
@@ -516,6 +524,23 @@ export const BillingPage = () => {
                 </p>
               </div>
             )}
+
+            {/* Top Up Button */}
+            {topUpSuccess && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4">
+                <p className="text-green-800 dark:text-green-200 font-medium">
+                  Credits added successfully!
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={openTopUpModal}
+              disabled={!hasPaymentMethod}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              {!hasPaymentMethod ? "Add Payment Method First" : "Top Up Credits"}
+            </button>
           </div>
         )}
       </div>
@@ -597,94 +622,6 @@ export const BillingPage = () => {
         </div>
       </div>
 
-      {/* Top Up Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Add Credits</h2>
-
-        {topUpSuccess && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4 mb-4">
-            <p className="text-green-800 dark:text-green-200 font-medium">
-              Credits added successfully!
-            </p>
-          </div>
-        )}
-
-        {!hasPaymentMethod ? (
-          <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-md p-6 text-center">
-            <p className="text-gray-600 dark:text-gray-400">
-              Please add a payment method first to top up your wallet.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Select an amount to add to your wallet:
-            </p>
-
-            {/* Preset Amount Buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[5, 10, 20, 50].map((amount) => (
-                <button
-                  key={amount}
-                  onClick={() => handleTopUp(amount)}
-                  disabled={processingTopUp}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:cursor-not-allowed"
-                >
-                  ${amount}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Amount */}
-            {!showCustomInput ? (
-              <button
-                onClick={() => setShowCustomInput(true)}
-                className="text-blue-600 dark:text-blue-400 hover:underline text-sm"
-              >
-                Enter custom amount
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
-                  placeholder="Enter amount"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                />
-                <button
-                  onClick={handleCustomTopUp}
-                  disabled={processingTopUp || !customAmount}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 px-6 rounded-md transition-colors disabled:cursor-not-allowed"
-                >
-                  Add
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCustomInput(false);
-                    setCustomAmount("");
-                  }}
-                  className="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-semibold py-2 px-4 rounded-md transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-
-            {processingTopUp && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Processing your payment...
-              </p>
-            )}
-
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Your payment method will be charged immediately.
-            </p>
-          </div>
-        )}
-      </div>
 
       {/* Model Usage Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
@@ -821,7 +758,7 @@ export const BillingPage = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Delete Payment Method
@@ -841,6 +778,68 @@ export const BillingPage = () => {
                 className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Up Modal */}
+      {showTopUpModal && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Top Up Credits
+            </h3>
+
+            {topUpError && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 mb-4">
+                <p className="text-red-800 dark:text-red-200 text-sm">{topUpError}</p>
+              </div>
+            )}
+
+            <div className="mb-6">
+              <label htmlFor="topUpAmount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Amount (USD)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                <input
+                  id="topUpAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={topUpAmount}
+                  onChange={(e) => setTopUpAmount(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={processingTopUp}
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Your payment method will be charged immediately.
+              </p>
+            </div>
+
+            {processingTopUp && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 text-center">
+                Processing your payment...
+              </p>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeTopUpModal}
+                disabled={processingTopUp}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmTopUp}
+                disabled={processingTopUp || !topUpAmount || parseFloat(topUpAmount) <= 0}
+                className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {processingTopUp ? "Processing..." : "Confirm"}
               </button>
             </div>
           </div>
