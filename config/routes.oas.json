@@ -71,7 +71,7 @@
         "operationId": "d14aaaa6-d5c5-4734-82de-082ec6d536ed"
       }
     },
-    "/v1/chat/completions": {
+    "/deprecated/chat/completions": {
       "x-zuplo-path": {
         "pathMode": "open-api"
       },
@@ -154,7 +154,7 @@
         "operationId": "7b9f73aa-21c3-4ab1-9b81-51c2d3aaf5eb"
       }
     },
-    "/v2/chat/completions": {
+    "/v1/chat/completions": {
       "x-zuplo-path": {
         "pathMode": "open-api"
       },
