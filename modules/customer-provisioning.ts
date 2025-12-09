@@ -78,7 +78,7 @@ export async function provisionCustomer(
 
     context.log.info(`Created Lago customer: ${userId}`);
 
-    // Create wallet with $10 USD in credits
+    // Create wallet with $1 USD in credits
     const createWalletResponse = await fetch(
       `${environment.LAGO_API_BASE}/api/v1/wallets`,
       {
@@ -93,7 +93,7 @@ export async function provisionCustomer(
             name: "Prepaid Credits",
             rate_amount: "1.0",
             currency: "USD",
-            granted_credits: "10.0",
+            granted_credits: "1.0",
             transaction_name: "Welcome to Public AI!"
           }
         })
