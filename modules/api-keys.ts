@@ -19,9 +19,9 @@ export default async function (request: ZuploRequest, context: ZuploContext) {
     );
   }
 
-  // Check whether consumer exists by searching for consumer with email
+  // Check whether consumer exists by searching for consumer with tag.sub
   const checkConsumerResponse = await fetch(
-    `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?manager-email=${body.email}`,
+    `https://dev.zuplo.com/v1/accounts/${accountName}/key-buckets/${bucketName}/consumers?tag.sub=${encodeURIComponent(sub)}`,
     {
       method: "GET",
       headers: {
