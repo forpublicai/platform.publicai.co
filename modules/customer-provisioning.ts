@@ -1,4 +1,5 @@
 import { ZuploContext, environment } from "@zuplo/runtime";
+import { getAuth0UserBySub } from "./auth0-helper";
 
 export interface ProvisionCustomerResult {
   success: boolean;
@@ -9,7 +10,7 @@ export interface ProvisionCustomerResult {
 /**
  * Provisions a complete customer setup in Lago including:
  * - Customer record
- * - Wallet with $10 welcome credits
+ * - Wallet with $2 welcome credits
  * - Pay-as-you-go subscription
  *
  * @param userId - The external customer ID (UUID)
@@ -40,8 +41,34 @@ export async function provisionCustomer(
     }
 
     const consumerResponse = await getConsumerResponse.json();
-    const userEmail = consumerResponse.tags?.email;
-    const userName = consumerResponse.name || userId;
+    const userSubFromTags = consumerResponse.tags?.sub;
+
+    // Try to get email and name from Auth0 first
+    let userEmail = consumerResponse.tags?.email;
+    let userName = consumerResponse.name || userId;
+
+    if (userSubFromTags && environment.AUTH0_CLIENT_ID && environment.AUTH0_CLIENT_SECRET) {
+      context.log.info(`Fetching user info from Auth0 for sub: ${userSubFromTags}`);
+      const auth0User = await getAuth0UserBySub(userSubFromTags, context);
+
+      if (auth0User) {
+        // Use Auth0 email if available (more reliable than consumer tags)
+        if (auth0User.email) {
+          userEmail = auth0User.email;
+          context.log.info(`Using Auth0 email: ${userEmail}`);
+        }
+
+        // Use Auth0 name if available
+        if (auth0User.name) {
+          userName = auth0User.name;
+          context.log.info(`Using Auth0 name: ${userName}`);
+        } else if (auth0User.given_name || auth0User.family_name) {
+          // Construct name from given_name and family_name
+          userName = [auth0User.given_name, auth0User.family_name].filter(Boolean).join(" ");
+          context.log.info(`Constructed name from Auth0: ${userName}`);
+        }
+      }
+    }
 
     context.log.info(`Consumer email: ${userEmail}, name: ${userName}`);
 
@@ -93,7 +120,7 @@ export async function provisionCustomer(
             name: "Prepaid Credits",
             rate_amount: "1.0",
             currency: "USD",
-            granted_credits: "1.0",
+            granted_credits: "2.0",
             transaction_name: "Welcome to Public AI!"
           }
         })
