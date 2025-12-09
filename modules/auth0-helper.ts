@@ -15,26 +15,16 @@ interface Auth0TokenResponse {
   expires_in: number;
 }
 
-const AUTH0_TOKEN_CACHE_KEY = "auth0_management_token";
-
 /**
- * Gets a valid Auth0 Management API token, using Zuplo cache when available
- * Automatically refreshes the token when it expires (24 hours)
+ * Gets a fresh Auth0 Management API token
+ * Fetches a new token on every call for better security
  *
- * @param context - Zuplo context for logging and cache access
+ * @param context - Zuplo context for logging
  * @returns Promise with the access token
  */
 async function getAuth0ManagementToken(context: ZuploContext): Promise<string | null> {
-  // Check if we have a valid cached token
-  const cachedToken = await context.cache.get(AUTH0_TOKEN_CACHE_KEY);
-  if (cachedToken) {
-    context.log.info("Using cached Auth0 Management API token");
-    return cachedToken;
-  }
-
-  // Token expired or doesn't exist, fetch a new one
   try {
-    context.log.info("Fetching new Auth0 Management API token");
+    context.log.info("Fetching Auth0 Management API token");
     const response = await fetch(
       `${environment.AUTH0_DOMAIN}/oauth/token`,
       {
@@ -58,12 +48,7 @@ async function getAuth0ManagementToken(context: ZuploContext): Promise<string | 
     }
 
     const tokenData: Auth0TokenResponse = await response.json();
-
-    // Cache the token with TTL slightly less than expires_in (5 min buffer)
-    const ttlSeconds = tokenData.expires_in - 300; // 5 minute buffer before expiry
-    await context.cache.put(AUTH0_TOKEN_CACHE_KEY, tokenData.access_token, ttlSeconds);
-
-    context.log.info(`Auth0 token cached for ${ttlSeconds} seconds`);
+    context.log.info("Successfully fetched Auth0 Management API token");
     return tokenData.access_token;
   } catch (error) {
     context.log.error(`Error fetching Auth0 Management API token: ${error}`);
