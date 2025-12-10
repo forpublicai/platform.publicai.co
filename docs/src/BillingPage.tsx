@@ -493,18 +493,19 @@ export const BillingPage = () => {
     setPricingError(null);
 
     try {
-      const pricingKey = import.meta.env.LITELLM_PRICING_KEY;
-      if (!pricingKey) {
-        throw new Error("Pricing API key not configured");
-      }
-
-      const response = await fetch("https://api-internal.publicai.co/v1/model/info", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${pricingKey}`,
-          "Content-Type": "application/json",
+      const serverUrl = import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+      const pricingRequest = new Request(
+        `${serverUrl}/v1/developer/pricing`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          }
         }
-      });
+      );
+
+      const signedRequest = await context.signRequest(pricingRequest);
+      const response = await fetch(signedRequest);
 
       if (!response.ok) {
         throw new Error("Failed to fetch model pricing");

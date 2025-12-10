@@ -256,6 +256,41 @@
         "operationId": "delete-payment-method-endpoint",
         "x-internal": true
       }
+    },
+    "/v1/developer/pricing": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "get": {
+        "summary": "Get model pricing information",
+        "description": "Returns pricing information for all available models",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-zuplo-route": {
+          "corsPolicy": "anything-goes",
+          "handler": {
+            "export": "default",
+            "module": "$import(./modules/pricing-handler)"
+          },
+          "policies": {
+            "inbound": [
+              "open-id-jwt-auth-inbound"
+            ]
+          }
+        },
+        "operationId": "pricing-endpoint",
+        "x-internal": true
+      }
     }
   },
   "components": {
@@ -494,6 +529,43 @@
           "payment_method": {
             "type": "object",
             "description": "The detached payment method"
+          }
+        }
+      },
+      "PricingResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model_name": {
+                  "type": "string",
+                  "description": "Name of the model"
+                },
+                "model_info": {
+                  "type": "object",
+                  "properties": {
+                    "input_cost_per_token": {
+                      "oneOf": [
+                        {"type": "number"},
+                        {"type": "string"}
+                      ],
+                      "description": "Cost per input token"
+                    },
+                    "output_cost_per_token": {
+                      "oneOf": [
+                        {"type": "number"},
+                        {"type": "string"}
+                      ],
+                      "description": "Cost per output token"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Array of model pricing information"
           }
         }
       }
