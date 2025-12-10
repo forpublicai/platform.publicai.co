@@ -14,9 +14,9 @@ export function getUserIdentifier(request: ZuploRequest, context: ZuploContext):
   if (consumerSub) {
     // Define rate limits per plan
     const planLimits = {
-      free: { requests: 20, windowMinutes: 1, message: "Free plan: 20 requests/minute limit exceeded" },
-      plus: { requests: 40, windowMinutes: 1, message: "Plus plan: 40 requests/minute limit exceeded" },
-      pro: { requests: 100, windowMinutes: 1, message: "Pro plan: 100 requests/minute limit exceeded" }
+      free: { requests: 100, windowMinutes: 1, message: "Free plan: 100 requests/minute limit exceeded" },
+      plus: { requests: 200, windowMinutes: 1, message: "Plus plan: 200 requests/minute limit exceeded" },
+      pro: { requests: 300, windowMinutes: 1, message: "Pro plan: 300 requests/minute limit exceeded" }
     };
 
     const limit = planLimits[plan] || planLimits.free;
