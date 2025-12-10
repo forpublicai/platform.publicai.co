@@ -85,6 +85,12 @@ interface ModelUsage {
   totalCost: number;
 }
 
+interface ModelPricing {
+  model_name: string;
+  input_cost_per_token: number;
+  output_cost_per_token: number;
+}
+
 export const BillingPage = () => {
   const auth = useAuth();
   const context = useZudoku();
@@ -108,6 +114,9 @@ export const BillingPage = () => {
   const [topUpAmount, setTopUpAmount] = useState<string>("10");
   const [modelUsage, setModelUsage] = useState<ModelUsage[]>([]);
   const [billingPeriod, setBillingPeriod] = useState<{from: string; to: string} | null>(null);
+  const [modelPricing, setModelPricing] = useState<ModelPricing[]>([]);
+  const [loadingPricing, setLoadingPricing] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
 
   const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -479,8 +488,52 @@ export const BillingPage = () => {
     }
   };
 
+  const fetchModelPricing = async () => {
+    setLoadingPricing(true);
+    setPricingError(null);
+
+    try {
+      const pricingKey = import.meta.env.LITELLM_PRICING_KEY;
+      if (!pricingKey) {
+        throw new Error("Pricing API key not configured");
+      }
+
+      const response = await fetch("https://api-internal.publicai.co/v1/model/info", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${pricingKey}`,
+          "Content-Type": "application/json",
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch model pricing");
+      }
+
+      const data = await response.json();
+
+      // Transform the data to our simpler format
+      const pricingData: ModelPricing[] = data.data.map((model: any) => ({
+        model_name: model.model_name,
+        input_cost_per_token: typeof model.model_info.input_cost_per_token === 'string'
+          ? parseFloat(model.model_info.input_cost_per_token)
+          : model.model_info.input_cost_per_token,
+        output_cost_per_token: typeof model.model_info.output_cost_per_token === 'string'
+          ? parseFloat(model.model_info.output_cost_per_token)
+          : model.model_info.output_cost_per_token,
+      }));
+
+      setModelPricing(pricingData);
+    } catch (err) {
+      setPricingError(err instanceof Error ? err.message : "Failed to fetch pricing");
+    } finally {
+      setLoadingPricing(false);
+    }
+  };
+
   useEffect(() => {
     fetchWalletBalance();
+    fetchModelPricing();
   }, [auth.isAuthenticated]);
 
   if (!auth.isAuthenticated) {
@@ -780,6 +833,53 @@ export const BillingPage = () => {
             </div>
           );
         })()}
+      </div>
+
+      {/* Model Pricing */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Model Pricing</h2>
+
+        {loadingPricing ? (
+          <p className="text-gray-600 dark:text-gray-400">Loading pricing data...</p>
+        ) : pricingError ? (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+            <p className="text-red-800 dark:text-red-200">{pricingError}</p>
+          </div>
+        ) : modelPricing.length === 0 ? (
+          <p className="text-gray-600 dark:text-gray-400">No pricing data available</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Cost per 1M Tokens</th>
+                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Cost per 1M Tokens</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modelPricing
+                  .sort((a, b) => a.model_name.localeCompare(b.model_name))
+                  .map((pricing) => (
+                  <tr
+                    key={pricing.model_name}
+                    className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                  >
+                    <td className="py-3 px-2 text-gray-900 dark:text-gray-100 font-medium">
+                      {pricing.model_name}
+                    </td>
+                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                      ${(pricing.input_cost_per_token * 1000000).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                      ${(pricing.output_cost_per_token * 1000000).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
