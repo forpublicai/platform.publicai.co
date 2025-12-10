@@ -151,7 +151,8 @@
             ]
           }
         },
-        "operationId": "7b9f73aa-21c3-4ab1-9b81-51c2d3aaf5eb"
+        "operationId": "7b9f73aa-21c3-4ab1-9b81-51c2d3aaf5eb",
+        "x-internal": true
       }
     },
     "/v1/chat/completions": {
@@ -180,7 +181,7 @@
           }
         },
         "operationId": "new-route-12fd1eff",
-        "x-internal": true
+        "x-internal": false
       }
     }
   },
