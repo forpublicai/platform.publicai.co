@@ -116,13 +116,16 @@ export default async function (
       // Determine context length (prefer max_input_tokens, fallback to max_tokens)
       const contextLength = pricing.max_input_tokens || pricing.max_tokens;
 
+      // Round to 6 decimal places to avoid floating point precision issues
+      const roundPrice = (price: number) => Math.round(price * 1_000_000) / 1_000_000;
+
       return {
         ...model,
         owned_by: ownedBy,
         ...(inputCostPerToken && outputCostPerToken ? {
           pricing: {
-            input: inputCostPerToken * 1_000_000,
-            output: outputCostPerToken * 1_000_000
+            input: roundPrice(inputCostPerToken * 1_000_000),
+            output: roundPrice(outputCostPerToken * 1_000_000)
           }
         } : {}),
         ...(contextLength ? { context_length: contextLength } : {})
