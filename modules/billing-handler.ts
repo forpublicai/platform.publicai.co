@@ -13,6 +13,15 @@ interface BillingResponse {
   requests: BillingRequestItem[];
 }
 
+// Helper function to chunk array into smaller batches
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += chunkSize) {
+    chunks.push(array.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 export async function billingHandler(
   request: ZuploRequest,
   context: ZuploContext
@@ -27,11 +36,7 @@ export async function billingHandler(
       );
     }
 
-    // Query LiteLLM's spend logs endpoint
-    const spendLogsUrl = new URL("https://api-internal.publicai.co/spend/logs/v2");
-
-    // Add request IDs as comma-separated query parameter
-    spendLogsUrl.searchParams.set("request_ids", body.requestIds.join(","));
+    context.log.info(`Processing billing request for ${body.requestIds.length} request IDs`);
 
     // Add date range (past 7 days to now) - required by LiteLLM API
     const endDate = new Date();
@@ -49,45 +54,59 @@ export async function billingHandler(
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     };
 
-    spendLogsUrl.searchParams.set("start_date", formatDate(startDate));
-    spendLogsUrl.searchParams.set("end_date", formatDate(endDate));
+    const startDateStr = formatDate(startDate);
+    const endDateStr = formatDate(endDate);
 
-    context.log.info(`Fetching spend logs for ${body.requestIds.length} request IDs`);
+    // Batch request IDs to avoid 414 URI Too Long errors
+    // Each request ID is ~40 chars, so 50 IDs = ~2KB URL (safe limit)
+    const BATCH_SIZE = 50;
+    const requestIdChunks = chunkArray(body.requestIds, BATCH_SIZE);
 
-    const spendLogsResponse = await fetch(spendLogsUrl.toString(), {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${environment.LITELLM_PRICING_KEY}`,
-        "Content-Type": "application/json",
-        "Accept-Encoding": "gzip, deflate, br"
+    context.log.info(`Split into ${requestIdChunks.length} batches of up to ${BATCH_SIZE} IDs`);
+
+    // Fetch spend logs for all batches in parallel
+    const fetchPromises = requestIdChunks.map(async (chunk) => {
+      const spendLogsUrl = new URL("https://api-internal.publicai.co/spend/logs/v2");
+      spendLogsUrl.searchParams.set("request_ids", chunk.join(","));
+      spendLogsUrl.searchParams.set("start_date", startDateStr);
+      spendLogsUrl.searchParams.set("end_date", endDateStr);
+
+      const response = await fetch(spendLogsUrl.toString(), {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${environment.LITELLM_PRICING_KEY}`,
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip, deflate, br"
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`LiteLLM API error: Status ${response.status}, ${errorText}`);
       }
-    });
 
-    if (!spendLogsResponse.ok) {
-      const errorText = await spendLogsResponse.text();
-      context.log.error(`Failed to fetch spend logs: Status ${spendLogsResponse.status}, Error: ${errorText}`);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch billing data" }),
-        { status: 502, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    const spendData = await spendLogsResponse.json() as {
-      data: Array<{
-        request_id: string;
-        spend: number;
+      return response.json() as Promise<{
+        data: Array<{
+          request_id: string;
+          spend: number;
+        }>;
       }>;
-    };
-
-    context.log.info(`Retrieved spend data for ${spendData.data.length} requests`);
-
-    // Create a map of request IDs to costs
-    const costMap = new Map<string, number>();
-    spendData.data.forEach(item => {
-      // Convert USD to nano-USD (multiply by 10^9)
-      const costNanoUsd = Math.round(item.spend * 1_000_000_000);
-      costMap.set(item.request_id, costNanoUsd);
     });
+
+    // Wait for all batch requests to complete
+    const batchResults = await Promise.all(fetchPromises);
+
+    // Merge all batch results into a single cost map
+    const costMap = new Map<string, number>();
+    batchResults.forEach(result => {
+      result.data.forEach(item => {
+        // Convert USD to nano-USD (multiply by 10^9)
+        const costNanoUsd = Math.round(item.spend * 1_000_000_000);
+        costMap.set(item.request_id, costNanoUsd);
+      });
+    });
+
+    context.log.info(`Retrieved spend data for ${costMap.size} requests`);
 
     // Build response with costs from spend logs, defaulting to 0 if not found
     const billingResponse: BillingResponse = {
