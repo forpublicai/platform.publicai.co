@@ -44,7 +44,12 @@
                       "id": "swiss-ai/apertus-8b-instruct",
                       "object": "model",
                       "created": 1677610602,
-                      "owned_by": "openai"
+                      "owned_by": "swiss-ai",
+                      "pricing": {
+                        "input": 0.1,
+                        "output": 0.2
+                      },
+                      "context_length": 128000
                     }
                   ]
                 }
@@ -55,16 +60,13 @@
         "x-zuplo-route": {
           "corsPolicy": "none",
           "handler": {
-            "export": "urlForwardHandler",
-            "module": "$import(@zuplo/runtime)",
-            "options": {
-              "baseUrl": "https://api-internal.publicai.co"
-            }
+            "export": "default",
+            "module": "$import(./modules/models-handler)",
+            "options": {}
           },
           "policies": {
             "inbound": [
-              "api-key-inbound",
-              "set-litellm-auth"
+              "api-key-inbound"
             ]
           }
         },
@@ -213,8 +215,33 @@
           },
           "owned_by": {
             "type": "string",
-            "description": "The organization that owns the model",
-            "example": "openai"
+            "description": "The organization that owns the model (extracted from model ID prefix)",
+            "example": "swiss-ai"
+          },
+          "pricing": {
+            "type": "object",
+            "description": "Pricing information for the model",
+            "properties": {
+              "input": {
+                "type": "number",
+                "description": "Price in US dollars per million input tokens",
+                "example": 0.1
+              },
+              "output": {
+                "type": "number",
+                "description": "Price in US dollars per million output tokens",
+                "example": 0.2
+              }
+            },
+            "required": [
+              "input",
+              "output"
+            ]
+          },
+          "context_length": {
+            "type": "integer",
+            "description": "Supported context length in tokens",
+            "example": 128000
           }
         },
         "required": [
