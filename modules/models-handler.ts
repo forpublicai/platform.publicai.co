@@ -32,7 +32,7 @@ export default async function (
       fetch("https://api-internal.publicai.co/v1/models", {
         method: "GET",
         headers: {
-          "Authorization": request.headers.get("Authorization") || "",
+          "Authorization": `Bearer ${environment.LITELLM_PRICING_KEY}`,
           "Content-Type": "application/json",
         }
       }),
