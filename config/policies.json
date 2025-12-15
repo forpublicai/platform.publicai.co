@@ -74,6 +74,14 @@
       },
       "name": "set-litellm-headers",
       "policyType": "custom-code-inbound"
+    },
+    {
+      "handler": {
+        "export": "default",
+        "module": "$import(./modules/add-inference-id-header)"
+      },
+      "name": "add-inference-id-header",
+      "policyType": "custom-code-outbound"
     }
   ]
 }

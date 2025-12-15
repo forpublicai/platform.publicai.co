@@ -177,6 +177,9 @@
               "user-rate-limit",
               "bedrock-guardrail-policy",
               "set-litellm-headers"
+            ],
+            "outbound": [
+              "add-inference-id-header"
             ]
           }
         },
