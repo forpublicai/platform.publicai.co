@@ -33,6 +33,25 @@ export async function billingHandler(
     // Add request IDs as comma-separated query parameter
     spendLogsUrl.searchParams.set("request_ids", body.requestIds.join(","));
 
+    // Add date range (past 7 days to now) - required by LiteLLM API
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+
+    // Format as 'YYYY-MM-DD HH:MM:SS'
+    const formatDate = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    };
+
+    spendLogsUrl.searchParams.set("start_date", formatDate(startDate));
+    spendLogsUrl.searchParams.set("end_date", formatDate(endDate));
+
     context.log.info(`Fetching spend logs for ${body.requestIds.length} request IDs`);
 
     const spendLogsResponse = await fetch(spendLogsUrl.toString(), {
