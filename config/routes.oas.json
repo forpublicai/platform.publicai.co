@@ -188,6 +188,38 @@
         "operationId": "new-route-12fd1eff",
         "x-internal": false
       }
+    },
+    "/v1/completions": {
+      "x-zuplo-path": {
+        "pathMode": "open-api"
+      },
+      "post": {
+        "summary": "Creates a completion for the provided prompt",
+        "description": "",
+        "x-zuplo-route": {
+          "corsPolicy": "none",
+          "handler": {
+            "export": "urlRewriteHandler",
+            "module": "$import(@zuplo/runtime)",
+            "options": {
+              "rewritePattern": "https://api-internal.publicai.co/v1/completions"
+            }
+          },
+          "policies": {
+            "inbound": [
+              "api-key-inbound",
+              "user-rate-limit",
+              "bedrock-guardrail-policy",
+              "set-litellm-headers"
+            ],
+            "outbound": [
+              "add-inference-id-header"
+            ]
+          }
+        },
+        "operationId": "completions-route-a7f3b8c9",
+        "x-internal": false
+      }
     }
   },
   "components": {
