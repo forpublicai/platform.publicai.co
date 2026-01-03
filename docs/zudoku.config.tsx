@@ -116,9 +116,11 @@ const config: ZudokuConfig = {
     enabled: true,
     deploymentName: process.env.ZUPLO_PUBLIC_DEPLOYMENT_NAME, // Note: Only required for local development
     createKey: async ({ apiKey, context, auth }) => {
-      // process.env.ZUPLO_PUBLIC_SERVER_URL is only required for local development
-      // import.meta.env.ZUPLO_SERVER_URL is automatically set when using a deployed environment, you do not need to set it
-      const serverUrl = process.env.ZUPLO_PUBLIC_SERVER_URL || import.meta.env.ZUPLO_SERVER_URL;
+      // process.env is used in config files and gets replaced at build time
+      const serverUrl = process.env.ZUPLO_PUBLIC_SERVER_URL || import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
+
+      console.log("Creating API key with serverUrl:", serverUrl);
+
       const createApiKeyRequest = new Request(serverUrl + "/v1/developer/api-key", {
         method: "POST",
         body: JSON.stringify({
@@ -134,15 +136,25 @@ const config: ZudokuConfig = {
         },
       });
 
-      const createApiKey = await fetch(
-        await context.signRequest(createApiKeyRequest),
-      );
+      try {
+        const signedRequest = await context.signRequest(createApiKeyRequest);
+        console.log("Signed request:", signedRequest.url);
 
-      if (!createApiKey.ok) {
-        throw new Error("Could not create API Key");
+        const createApiKey = await fetch(signedRequest);
+        console.log("Response status:", createApiKey.status);
+
+        if (!createApiKey.ok) {
+          const errorText = await createApiKey.text();
+          console.error("API Key creation failed:", errorText);
+          throw new Error("Could not create API Key: " + errorText);
+        }
+
+        console.log("API Key created successfully");
+        return true;
+      } catch (error) {
+        console.error("Error in createKey:", error);
+        throw error;
       }
-
-      return true;
     },
   },
 };
