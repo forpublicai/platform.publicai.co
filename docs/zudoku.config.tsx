@@ -113,7 +113,7 @@ const config: ZudokuConfig = {
     protectedRoutes: ["/billing"],
   },
   apiKeys: {
-    enabled: true,
+    // enabled: true,
     deploymentName: process.env.ZUPLO_PUBLIC_DEPLOYMENT_NAME, // Note: Only required for local development
     createKey: async ({ apiKey, context, auth }) => {
       // process.env is used in config files and gets replaced at build time
