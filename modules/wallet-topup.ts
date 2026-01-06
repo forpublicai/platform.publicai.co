@@ -12,12 +12,16 @@ export interface WalletTopUpResult {
  * @param userId - The Lago external_customer_id
  * @param amount - The amount to add in credits
  * @param context - The Zuplo context for logging
+ * @param transactionName - Optional name for the transaction (defaults to "Prepaid Top-up")
+ * @param isGranted - If true, credits are granted (free); if false, credits are paid (default: false)
  * @returns Result object with success status and transaction details
  */
 export async function topUpWallet(
   userId: string,
   amount: number,
-  context: ZuploContext
+  context: ZuploContext,
+  transactionName: string = "Prepaid Top-up",
+  isGranted: boolean = false
 ): Promise<WalletTopUpResult> {
   context.log.info(`Attempting to top up wallet for user ${userId} with amount $${amount.toFixed(2)}`);
 
@@ -69,9 +73,9 @@ export async function topUpWallet(
         body: JSON.stringify({
           wallet_transaction: {
             wallet_id: walletId,
-            paid_credits: amount.toFixed(2),
-            granted_credits: "0.0",
-            name: "Prepaid Top-up"
+            paid_credits: isGranted ? "0.0" : amount.toFixed(2),
+            granted_credits: isGranted ? amount.toFixed(2) : "0.0",
+            name: transactionName
           }
         })
       }

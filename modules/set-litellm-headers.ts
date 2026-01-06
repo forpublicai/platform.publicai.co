@@ -81,7 +81,13 @@ export default async function (
         if (autoTopupConfig && creditsBalance < autoTopupConfig.threshold) {
           context.log.info(`Auto top-up triggered for user ${userId}: balance $${creditsBalance.toFixed(2)} < threshold $${autoTopupConfig.threshold}`);
 
-          const topupResult = await topUpWallet(userId, autoTopupConfig.topupAmount, context);
+          const topupResult = await topUpWallet(
+            userId,
+            autoTopupConfig.topupAmount,
+            context,
+            "Auto top-up. Credits purchased",
+            true  // isGranted = true for auto top-ups (post-paid)
+          );
 
           if (topupResult.success) {
             context.log.info(`Successfully topped up $${autoTopupConfig.topupAmount} for user ${userId}. New balance: $${topupResult.newBalance?.toFixed(2)}`);
