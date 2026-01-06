@@ -1,4 +1,5 @@
 import { ZuploContext, ZuploRequest, environment } from "@zuplo/runtime";
+import { topUpWallet } from "./wallet-topup";
 
 interface TopUpRequest {
   amount: number;
@@ -124,154 +125,37 @@ export default async function (
   const userId = consumer.name;
   context.log.info(`Found consumer: ${consumer.id}, name: ${userId} (using as Lago external_customer_id)`);
 
-  // Get wallet ID for this customer
-  const checkWalletResponse = await fetch(
-    `${environment.LAGO_API_BASE}/api/v1/wallets?external_customer_id=${userId}`,
+  // Use shared wallet top-up helper
+  const result = await topUpWallet(userId, topUpData.amount, context);
+
+  if (!result.success) {
+    const statusCode = result.error?.includes("No wallet found") ? 404 : 500;
+    return new Response(
+      JSON.stringify({
+        error: {
+          message: result.error || "Failed to top up wallet",
+          type: statusCode === 404 ? "not_found" : "api_error"
+        }
+      }),
+      {
+        status: statusCode,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+  }
+
+  // Return transaction in expected format - frontend will check status (settled vs pending)
+  return new Response(
+    JSON.stringify({
+      wallet_transaction: result.transaction
+    }),
     {
-      method: "GET",
+      status: 200,
       headers: {
-        "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
         "Content-Type": "application/json"
       }
     }
   );
-
-  if (!checkWalletResponse.ok) {
-    const error = await checkWalletResponse.text();
-    context.log.error(`Failed to fetch wallet from Lago: ${error}`);
-    return new Response(
-      JSON.stringify({
-        error: {
-          message: "Failed to fetch wallet information",
-          type: "api_error"
-        }
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-  }
-
-  const walletData = await checkWalletResponse.json();
-
-  if (!walletData.wallets || walletData.wallets.length === 0) {
-    context.log.error("No wallet found for customer");
-    return new Response(
-      JSON.stringify({
-        error: {
-          message: "No wallet found for user",
-          type: "not_found"
-        }
-      }),
-      {
-        status: 404,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-  }
-
-  const walletId = walletData.wallets[0].lago_id;
-  context.log.info(`Found wallet ID: ${walletId}`);
-
-  try {
-    // Create wallet transaction (top-up)
-    const topUpResponse = await fetch(
-      `${environment.LAGO_API_BASE}/api/v1/wallet_transactions`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          wallet_transaction: {
-            wallet_id: walletId,
-            paid_credits: topUpData.amount.toFixed(2),
-            granted_credits: "0.0",
-            name: "Prepaid Top-up"
-          }
-        })
-      }
-    );
-
-    if (!topUpResponse.ok) {
-      const error = await topUpResponse.text();
-      context.log.error(`Failed to create wallet transaction: Status ${topUpResponse.status}, Error: ${error}`);
-
-      return new Response(
-        JSON.stringify({
-          error: {
-            message: "Failed to create top-up transaction",
-            type: "api_error",
-            details: error
-          }
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
-    }
-
-    const transactionData = await topUpResponse.json();
-    context.log.info(`Wallet transaction created: ${JSON.stringify(transactionData)}`);
-
-    // Lago returns wallet_transactions as an array, extract the first one
-    const transaction = transactionData.wallet_transactions?.[0];
-
-    if (!transaction) {
-      context.log.error("No transaction returned from Lago");
-      return new Response(
-        JSON.stringify({
-          error: {
-            message: "Failed to create transaction",
-            type: "api_error"
-          }
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
-    }
-
-    // Return transaction in expected format - frontend will check status (settled vs pending)
-    return new Response(
-      JSON.stringify({
-        wallet_transaction: transaction
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-  } catch (error) {
-    context.log.error(`Error creating wallet transaction: ${error}`);
-
-    return new Response(
-      JSON.stringify({
-        error: {
-          message: "Internal server error",
-          type: "server_error"
-        }
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-  }
 }

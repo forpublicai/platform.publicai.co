@@ -1,5 +1,24 @@
 import {ZuploContext, ZuploRequest, environment} from "@zuplo/runtime";
 import { provisionCustomer } from "./customer-provisioning";
+import { topUpWallet } from "./wallet-topup";
+
+// Auto top-up configuration - parsed from environment variable
+// Format: "userId:threshold:topupAmount,userId2:threshold:topupAmount"
+// Example: "abc-123:70:10,def-456:50:20"
+const AUTO_TOPUP_USERS = new Map<string, { threshold: number; topupAmount: number }>();
+
+if (environment.AUTO_TOPUP_CONFIG) {
+  const configs = environment.AUTO_TOPUP_CONFIG.split(',');
+  configs.forEach(config => {
+    const [userId, threshold, topupAmount] = config.split(':');
+    if (userId && threshold && topupAmount) {
+      AUTO_TOPUP_USERS.set(userId.trim(), {
+        threshold: parseFloat(threshold),
+        topupAmount: parseFloat(topupAmount)
+      });
+    }
+  });
+}
 
 export default async function (
   request: ZuploRequest,
@@ -56,6 +75,20 @@ export default async function (
       if (walletData.wallets && walletData.wallets.length > 0) {
         const wallet = walletData.wallets[0];
         const creditsBalance = parseFloat(wallet.credits_ongoing_balance || "0");
+
+        // Check for auto top-up eligibility
+        const autoTopupConfig = AUTO_TOPUP_USERS.get(userId);
+        if (autoTopupConfig && creditsBalance < autoTopupConfig.threshold) {
+          context.log.info(`Auto top-up triggered for user ${userId}: balance $${creditsBalance.toFixed(2)} < threshold $${autoTopupConfig.threshold}`);
+
+          const topupResult = await topUpWallet(userId, autoTopupConfig.topupAmount, context);
+
+          if (topupResult.success) {
+            context.log.info(`Successfully topped up $${autoTopupConfig.topupAmount} for user ${userId}. New balance: $${topupResult.newBalance?.toFixed(2)}`);
+          } else {
+            context.log.error(`Failed to auto top-up wallet for user ${userId}: ${topupResult.error}`);
+          }
+        }
 
         if (creditsBalance <= 0.10) {
           context.log.warn(`User ${userId} has low wallet balance: $${creditsBalance.toFixed(2)} (≤ $0.10)`);
