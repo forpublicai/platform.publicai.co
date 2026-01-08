@@ -50,10 +50,16 @@ export default async function (
   );
 
   let hasActiveSubscription = false;
+  let subscriptionId: string | null = null;
   if (checkSubscriptionResponse.ok) {
     const subscriptions = await checkSubscriptionResponse.json();
     hasActiveSubscription = subscriptions.subscriptions && subscriptions.subscriptions.length > 0;
-    context.log.info(`Active subscription exists: ${hasActiveSubscription}`);
+    if (hasActiveSubscription && subscriptions.subscriptions[0]) {
+      subscriptionId = subscriptions.subscriptions[0].external_id;
+      context.log.info(`Active subscription exists: ${hasActiveSubscription}, subscription_id: ${subscriptionId}`);
+    } else {
+      context.log.info(`Active subscription exists: ${hasActiveSubscription}`);
+    }
   }
 
   // For users with active subscriptions, check wallet balance
@@ -134,10 +140,19 @@ export default async function (
   const newRequest = new ZuploRequest(request, {
     body: JSON.stringify(body)
   });
-  
+
   if (environment.LITELLM_DEVELOPER_API_KEY) {
     newRequest.headers.set("Authorization", `Bearer ${environment.LITELLM_DEVELOPER_API_KEY}`);
   }
-  
+
+  // Set headers to pass user info to LiteLLM
+  newRequest.headers.set("x-zuplo-user-id", userId);
+  if (subscriptionId) {
+    newRequest.headers.set("x-zuplo-subscription-id", subscriptionId);
+    context.log.info(`Set headers - x-zuplo-user-id: ${userId}, x-zuplo-subscription-id: ${subscriptionId}`);
+  } else {
+    context.log.info(`Set headers - x-zuplo-user-id: ${userId}`);
+  }
+
   return newRequest;
 }
