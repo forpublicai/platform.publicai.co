@@ -106,22 +106,21 @@ export default async function (
   context.log.info(`Found consumer: ${consumer.id}, name: ${userId}`);
 
   try {
-    // First, verify the payment method belongs to this customer
-    // Search for the Stripe customer by name (userId)
-    const searchQuery = `name:'${userId}'`;
-    const searchResponse = await fetch(
-      `https://api.stripe.com/v1/customers/search?query=${encodeURIComponent(searchQuery)}`,
+    // Get Stripe customer ID from Lago
+    const customerResponse = await fetch(
+      `${environment.LAGO_API_BASE}/api/v1/customers/${userId}`,
       {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${environment.STRIPE_API_KEY}`,
+          "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+          "Content-Type": "application/json"
         }
       }
     );
 
-    if (!searchResponse.ok) {
-      const errorText = await searchResponse.text();
-      context.log.error(`Failed to search Stripe customers: ${errorText}`);
+    if (!customerResponse.ok) {
+      const errorText = await customerResponse.text();
+      context.log.error(`Failed to fetch customer from Lago: ${errorText}`);
       return new Response(
         JSON.stringify({
           error: {
@@ -138,10 +137,11 @@ export default async function (
       );
     }
 
-    const searchData = await searchResponse.json();
+    const customerData = await customerResponse.json();
+    const stripeCustomerId = customerData.customer?.billing_configuration?.provider_customer_id;
 
-    if (!searchData.data || searchData.data.length === 0) {
-      context.log.warn(`No Stripe customer found with name: ${userId}`);
+    if (!stripeCustomerId) {
+      context.log.warn(`No Stripe customer ID found in Lago for user: ${userId}`);
       return new Response(
         JSON.stringify({
           error: {
@@ -158,8 +158,7 @@ export default async function (
       );
     }
 
-    const stripeCustomerId = searchData.data[0].id;
-    context.log.info(`Found Stripe customer: ${stripeCustomerId}`);
+    context.log.info(`Found Stripe customer ID from Lago: ${stripeCustomerId}`);
 
     // Verify the payment method belongs to this customer
     const paymentMethodResponse = await fetch(
