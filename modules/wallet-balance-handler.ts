@@ -182,7 +182,7 @@ export default async function (
 
       if (customerResponse.ok) {
         const customerData = await customerResponse.json();
-        const stripeCustomerId = customerData.customer?.provider_customer?.provider_customer_id;
+        const stripeCustomerId = customerData.customer?.billing_configuration?.provider_customer_id;
 
         if (stripeCustomerId) {
           context.log.info(`Found Stripe customer ID from Lago: ${stripeCustomerId}`);
