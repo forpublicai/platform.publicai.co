@@ -92,7 +92,7 @@ export default async function (
             autoTopupConfig.topupAmount,
             context,
             "Auto top-up. Credits purchased",
-            true  // isGranted = true for auto top-ups (post-paid)
+            false  // isGranted = true for post-paid auto top-ups
           );
 
           if (topupResult.success) {
