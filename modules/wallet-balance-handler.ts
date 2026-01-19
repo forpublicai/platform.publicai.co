@@ -242,6 +242,31 @@ export default async function (
       context.log.warn(`Error fetching current usage: ${error}`);
     }
 
+    // Fetch customer portal URL from Lago
+    let portalUrl: string | null = null;
+    try {
+      const portalResponse = await fetch(
+        `${environment.LAGO_API_BASE}/api/v1/customers/${userId}/portal_url`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      if (portalResponse.ok) {
+        const portalData = await portalResponse.json();
+        portalUrl = portalData.customer?.portal_url || null;
+        context.log.info(`Retrieved customer portal URL`);
+      } else {
+        context.log.warn(`Failed to fetch customer portal URL: ${portalResponse.status}`);
+      }
+    } catch (error) {
+      context.log.warn(`Error fetching customer portal URL: ${error}`);
+    }
+
     // Fetch wallet transactions from Lago
     let walletTransactions = [];
     if (walletData.wallets && walletData.wallets.length > 0) {
@@ -279,7 +304,8 @@ export default async function (
         hasPaymentMethod,
         payment_methods: paymentMethods,
         wallet_transactions: walletTransactions,
-        current_usage: currentUsage
+        current_usage: currentUsage,
+        portal_url: portalUrl
       }),
       {
         status: 200,
