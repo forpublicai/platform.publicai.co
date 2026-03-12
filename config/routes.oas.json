@@ -177,7 +177,6 @@
             "inbound": [
               "api-key-inbound",
               "user-rate-limit",
-              "bedrock-guardrail-policy",
               "set-litellm-headers"
             ],
             "outbound": [
@@ -209,7 +208,6 @@
             "inbound": [
               "api-key-inbound",
               "user-rate-limit",
-              "bedrock-guardrail-policy",
               "set-litellm-headers"
             ],
             "outbound": [
