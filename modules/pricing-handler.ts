@@ -6,25 +6,6 @@ export default async function (
 ) {
   context.log.info("Pricing handler called");
 
-  // Check if user is authenticated via JWT
-  if (!request.user?.sub) {
-    context.log.warn("No user.sub found in request - authentication failed");
-    return new Response(
-      JSON.stringify({
-        error: {
-          message: "Authentication required",
-          type: "unauthorized"
-        }
-      }),
-      {
-        status: 401,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }
-    );
-  }
-
   try {
     // Fetch pricing data from the internal API
     const pricingResponse = await fetch(

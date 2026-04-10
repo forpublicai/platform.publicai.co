@@ -509,8 +509,8 @@ export const BillingPage = () => {
         }
       );
 
-      const signedRequest = await context.signRequest(pricingRequest);
-      const response = await fetch(signedRequest);
+      // Fetch pricing without authentication
+      const response = await fetch(pricingRequest);
 
       if (!response.ok) {
         throw new Error("Failed to fetch model pricing");
@@ -538,19 +538,79 @@ export const BillingPage = () => {
   };
 
   useEffect(() => {
-    fetchWalletBalance();
+    // Always fetch pricing data, even when not authenticated
     fetchModelPricing();
+    
+    // Only fetch wallet balance when authenticated
+    if (auth.isAuthenticated) {
+      fetchWalletBalance();
+    }
   }, [auth.isAuthenticated]);
 
   if (!auth.isAuthenticated) {
     return (
-      <section className="container mx-auto px-4 py-8">
+      <section className="container mx-auto px-4 py-8 max-w-4xl">
         <Head>
           <title>Billing - Public AI Gateway</title>
         </Head>
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">Billing</h1>
-          <p className="text-lg">Please log in to view your billing information.</p>
+        
+        <h1 className="text-3xl font-bold mb-6">Billing</h1>
+
+        {/* Login prompt */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            Track Your Usage
+          </h2>
+          <p className="text-blue-800 dark:text-blue-200 mb-4">
+            Log in to view your wallet balance, usage statistics, and transaction history.
+          </p>
+        </div>
+
+        {/* Model Pricing - Public */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Model Pricing</h2>
+
+          {loadingPricing ? (
+            <p className="text-gray-600 dark:text-gray-400">Loading pricing data...</p>
+          ) : pricingError ? (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+              <p className="text-red-800 dark:text-red-200">{pricingError}</p>
+            </div>
+          ) : modelPricing.length === 0 ? (
+            <p className="text-gray-600 dark:text-gray-400">No pricing data available</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Cost per 1M Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Cost per 1M Tokens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {modelPricing
+                    .sort((a, b) => a.model_name.localeCompare(b.model_name))
+                    .map((pricing) => (
+                    <tr
+                      key={pricing.model_name}
+                      className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                    >
+                      <td className="py-3 px-2 text-gray-900 dark:text-gray-100 font-medium">
+                        {pricing.model_name}
+                      </td>
+                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                        ${(pricing.input_cost_per_token * 1000000).toFixed(2)}
+                      </td>
+                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                        ${(pricing.output_cost_per_token * 1000000).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </section>
     );
