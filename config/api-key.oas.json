@@ -283,9 +283,7 @@
             "module": "$import(./modules/pricing-handler)"
           },
           "policies": {
-            "inbound": [
-              "open-id-jwt-auth-inbound"
-            ]
+            "inbound": []
           }
         },
         "operationId": "pricing-endpoint",
