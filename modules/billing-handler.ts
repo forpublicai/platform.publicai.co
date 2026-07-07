@@ -143,9 +143,9 @@ export async function billingHandler(
     const startDateStr = formatDate(startDate);
     const endDateStr = formatDate(endDate);
 
-    // Larger batch size to reduce number of requests
-    // 500 IDs × ~40 chars = ~20KB, well within URL limits
-    const BATCH_SIZE = 500;
+    // Keep batch size small to avoid '414 Request-URI Too Large' errors.
+    // 80 IDs × ~40 chars = ~3.2KB, which is safely below common 4KB/8KB URL length limits.
+    const BATCH_SIZE = 80;
     // Limit concurrent requests to avoid overwhelming LiteLLM
     const MAX_CONCURRENCY = 10;
 
