@@ -1,18 +1,19 @@
-:::info{title="We'd love your feedback!"}
+# Quick Start
 
-How has your experience using Apertus been? Let us know at https://forms.gle/9TGSfTK1RfKj2b6X9
+Welcome to the Public AI Inference Utility developer portal.
 
-:::
+## 1. Get your API key
 
-### 1. Get Your API Key
+1. **Sign up**: Click [Login](/signin) in the top right and sign up
+2. **Open Account**: Go to the [Account](/account/billing) tab in the top navigation
+3. **Create API key**: Open [API Keys](/settings/api-keys) and click _Create API Key_
+4. **Generate**: Enter a name, set expiration, and click _Generate Key_
 
-1. **Sign up**: Click _Login_ in the top right and sign up using single sign-on
-2. **Create API Key**: Go to [API Keys](/settings/api-keys) and click _Create API Key_
-3. **Generate**: Enter a name, set expiration, and click _Generate Key_
+## 2. Explore available models
 
-### 2. Explore Available Models
+See [Available Models](/models) for the full catalog of hosted models, including Swiss AI Apertus, AISingapore SEA-LION, Allen AI Olmo, and more.
 
-Want to see what other models are available? You can list all models using:
+You can also list models programmatically:
 
 ```bash
 curl -X GET https://api.publicai.co/v1/models \
@@ -32,7 +33,7 @@ curl -X GET https://api.publicai.co/v1/models \
   ]}
 />
 
-### 3. Making Your First Request
+## 3. Make your first request
 
 Once you have an API key, you can start making requests to our AI models. Here's a simple example:
 
@@ -42,7 +43,7 @@ curl -X POST https://api.publicai.co/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "User-Agent: MyApp/1.0" \
   -d '{
-    "model": "swiss-ai/apertus-8b-instruct",
+    "model": "swiss-ai/apertus-v1.5-8b",
     "messages": [
       {
         "role": "user",
@@ -64,7 +65,7 @@ curl -X POST https://api.publicai.co/v1/chat/completions \
     { name: "Content-Type", defaultValue: "application/json" }
   ]}
   body={JSON.stringify({
-    model: "swiss-ai/apertus-8b-instruct",
+    model: "swiss-ai/apertus-v1.5-8b",
     messages: [
       {
         role: "user",
@@ -88,30 +89,23 @@ All API requests require:
    User-Agent: MyApp/1.0
    ```
 
-## Model Configuration
+## Model configuration
 
-Our recommended inference parameters, which we use on our consumer frontend at [publicai.co](https://publicai.co):
+Inference parameters vary by model. See each model's Hugging Face card on the [Available Models](/models) page, and use `GET /v1/models` for `context_length` and pricing.
 
-- **Context Window:** 65,536 tokens
-- **Max Output Tokens:** 8,192 tokens
-- **Temperature:** 0.8 (recommended by swiss-ai)
-- **Top-p:** 0.9 (recommended by swiss-ai)
+## Rate limits and billing
 
-Additional parameter tuning and documentation will be available in future updates.
-
-## Rate Limits
-
-To ensure fair usage across all users:
-- **During Swiss AI Weeks:** 20 requests per minute
+Rate limits depend on your plan tier. See [Plans & Rate Limits](/plans) for details on Free, Plus, Pro, and Enterprise tiers. Usage and wallet balance are available under Account → [Billing](/account/billing).
 
 ## Support
 
-- **Documentation:** Explore the full [API Reference](/api)
+- **API Reference:** Explore the full [API Reference](/api)
 - **Community:** Join our discussions at [github.com/forpublicai](https://github.com/forpublicai)
 - **Issues:** Report problems via GitHub Issues
 
-## What's Next?
+## What's next?
 
+- Browse [Available Models](/models) and pick the right model for your use case
+- Review [Plans & Rate Limits](/plans) and [Billing](/account/billing) for usage and pricing
 - Explore the complete [API Reference](/api) for detailed endpoint documentation
-- Check out example implementations in our GitHub repositories
-- Join our community to stay updated on new model releases
+- [Support Us](/support-us) to upgrade to the Plus tier via OpenCollective

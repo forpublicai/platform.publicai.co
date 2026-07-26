@@ -1,0 +1,70 @@
+import { ModelCatalog } from "../src/ModelCatalog";
+
+# Available Models
+
+The Public AI Gateway provides a unified, OpenAI-compatible API for open-source models from multiple inference partners. Model IDs use the format `provider/model-name`.
+
+## List Models
+
+Fetch the current catalog programmatically:
+
+```bash
+curl -X GET https://api.publicai.co/v1/models \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0"
+```
+
+Each model entry includes `id`, `owned_by`, and — when available — `pricing` (per million tokens) and `context_length`. See the [Billing](/account/billing) page for the latest per-model pricing.
+
+Inference parameters (`temperature`, `top_p`, `max_tokens`, etc.) vary by model. Check each model's Hugging Face card in the catalog below for provider recommendations, and use `GET /v1/models` for `context_length` and pricing.
+
+## Model Catalog
+
+<ModelCatalog />
+
+## Example Requests
+
+**Swiss AI Apertus:**
+
+```bash
+curl -X POST https://api.publicai.co/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0" \
+  -d '{
+    "model": "swiss-ai/apertus-v1.5-8b",
+    "messages": [
+      { "role": "user", "content": "Explain open-source AI in one paragraph." }
+    ]
+  }'
+```
+
+**Allen AI Olmo:**
+
+```bash
+curl -X POST https://api.publicai.co/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0" \
+  -d '{
+    "model": "allenai/Olmo-3-7B-Instruct",
+    "messages": [
+      { "role": "user", "content": "What is machine learning?" }
+    ]
+  }'
+```
+
+**AISingapore SEA-LION:**
+
+```bash
+curl -X POST https://api.publicai.co/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "User-Agent: MyApp/1.0" \
+  -d '{
+    "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
+    "messages": [
+      { "role": "user", "content": "Hello!" }
+    ]
+  }'
+```

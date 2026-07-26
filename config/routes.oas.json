@@ -2,9 +2,12 @@
   "openapi": "3.1.0",
   "info": {
     "version": "1.0.0",
-    "title": "My Zuplo API"
+    "title": "Public AI Gateway API"
   },
   "servers": [
+    {
+      "url": "https://api.publicai.co"
+    },
     {
       "url": "http://localhost:9000"
     }
@@ -41,7 +44,7 @@
                   "object": "list",
                   "data": [
                     {
-                      "id": "swiss-ai/apertus-8b-instruct",
+                      "id": "swiss-ai/apertus-v1.5-8b",
                       "object": "model",
                       "created": 1677610602,
                       "owned_by": "swiss-ai",
@@ -114,13 +117,13 @@
                   "id": "chatcmpl-6d5e4c0fba54aec4b099fc524c13247a",
                   "object": "chat.completion",
                   "created": 1757652946,
-                  "model": "swiss-ai/Apertus-8B-Instruct-2509",
+                  "model": "swiss-ai/apertus-v1.5-8b",
                   "choices": [
                     {
                       "index": 0,
                       "message": {
                         "role": "assistant",
-                        "content": "Hello! I'm Apertus, your AI assistant. How can I assist you today?"
+                        "content": "Open-source AI refers to machine learning models whose weights and training code are publicly available for anyone to use, study, and build upon."
                       },
                       "finish_reason": "stop"
                     }
@@ -228,7 +231,7 @@
           "id": {
             "type": "string",
             "description": "The model identifier",
-            "example": "swiss-ai/apertus-8b-instruct"
+            "example": "swiss-ai/apertus-v1.5-8b"
           },
           "object": {
             "type": "string",
@@ -573,7 +576,7 @@
           "messages"
         ],
         "example": {
-          "model": "swiss-ai/apertus-8b-instruct",
+          "model": "swiss-ai/apertus-v1.5-8b",
           "messages": [
             {
               "role": "user",
@@ -613,7 +616,7 @@
           "index": 0,
           "message": {
             "role": "assistant",
-            "content": "Hello! I'm Apertus, your AI assistant. How can I assist you today?"
+            "content": "Open-source AI refers to machine learning models whose weights and training code are publicly available for anyone to use, study, and build upon."
           },
           "finish_reason": "stop"
         }
@@ -694,13 +697,13 @@
           "id": "chatcmpl-6d5e4c0fba54aec4b099fc524c13247a",
           "object": "chat.completion",
           "created": 1757652946,
-          "model": "swiss-ai/Apertus-8B-Instruct-2509",
+          "model": "swiss-ai/apertus-v1.5-8b",
           "choices": [
             {
               "index": 0,
               "message": {
                 "role": "assistant",
-                "content": "Hello! I'm Apertus, your AI assistant. How can I assist you today?"
+                "content": "Open-source AI refers to machine learning models whose weights and training code are publicly available for anyone to use, study, and build upon."
               },
               "finish_reason": "stop"
             }

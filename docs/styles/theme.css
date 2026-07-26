@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&family=Inter:wght@500;600;700&family=Overpass:wght@700&family=Overpass+Mono:wght@400&display=swap');
+
+:root {
+  --pai-red: #EF3C24;
+  --pai-red-hover: #FE6550;
+  --pai-black: #000000;
+  --pai-white: #FFFFFF;
+  --pai-gray-100: #F7F7F7;
+  --pai-gray-400: #929292;
+  --pai-gray-800: #444444;
+  --pai-oak: #a97954;
+  --pai-parchment: #f6f2ea;
+
+  --color-brand: var(--pai-red);
+  --color-brand-hover: var(--pai-red-hover);
+  --text-primary: var(--pai-black);
+  --text-inverse: var(--pai-white);
+  --surface-page: var(--pai-white);
+  --surface-subtle: var(--pai-gray-100);
+  --border-hairline: #D9D9D9;
+
+  --font-sans: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Overpass Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background-color: rgba(0, 0, 0, 0.12);
+  color: inherit;
+}
+
+.dark ::selection {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: inherit;
+}
+
+/* Logo spacing */
+header.sticky a:has(img) > div {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+/* Extra spacing at top of page and between logo row and docs navbar */
+header.sticky {
+  padding-top: 0.75rem;
+}
+
+header.sticky > div:nth-child(2) {
+  box-shadow: none !important;
+  --tw-inset-shadow: 0 0 #0000;
+  padding-bottom: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  header.sticky {
+    padding-top: 1rem;
+  }
+
+  header.sticky > div:nth-child(2) {
+    padding-bottom: 1rem;
+  }
+}

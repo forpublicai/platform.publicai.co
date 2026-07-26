@@ -557,35 +557,35 @@ export const BillingPage = () => {
         <h1 className="text-3xl font-bold mb-6">Billing</h1>
 
         {/* Login prompt */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-blue-900 dark:text-blue-100 mb-2">
+        <div className="bg-muted border border-border rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             Track Your Usage
           </h2>
-          <p className="text-blue-800 dark:text-blue-200 mb-4">
+          <p className="text-muted-foreground mb-4">
             Log in to view your wallet balance, usage statistics, and transaction history.
           </p>
         </div>
 
         {/* Model Pricing - Public */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-card rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Model Pricing</h2>
 
           {loadingPricing ? (
-            <p className="text-gray-600 dark:text-gray-400">Loading pricing data...</p>
+            <p className="text-muted-foreground">Loading pricing data...</p>
           ) : pricingError ? (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
               <p className="text-red-800 dark:text-red-200">{pricingError}</p>
             </div>
           ) : modelPricing.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400">No pricing data available</p>
+            <p className="text-muted-foreground">No pricing data available</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Cost per 1M Tokens</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Cost per 1M Tokens</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-2 font-semibold text-foreground">Model</th>
+                    <th className="text-right py-3 px-2 font-semibold text-foreground">Input Cost per 1M Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-foreground">Output Cost per 1M Tokens</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -594,15 +594,15 @@ export const BillingPage = () => {
                     .map((pricing) => (
                     <tr
                       key={pricing.model_name}
-                      className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                      className="border-b border-border last:border-0"
                     >
-                      <td className="py-3 px-2 text-gray-900 dark:text-gray-100 font-medium">
+                      <td className="py-3 px-2 text-foreground font-medium">
                         {pricing.model_name}
                       </td>
-                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                      <td className="py-3 px-2 text-right text-muted-foreground">
                         ${(pricing.input_cost_per_token * 1000000).toFixed(2)}
                       </td>
-                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                      <td className="py-3 px-2 text-right text-muted-foreground">
                         ${(pricing.output_cost_per_token * 1000000).toFixed(2)}
                       </td>
                     </tr>
@@ -625,7 +625,7 @@ export const BillingPage = () => {
       <h1 className="text-3xl font-bold mb-6">Billing</h1>
 
       {/* Wallet Balance Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-card rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Wallet Balance</h2>
           {portalUrl && (
@@ -633,7 +633,7 @@ export const BillingPage = () => {
               href={portalUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
             >
               View billing portal
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -645,7 +645,7 @@ export const BillingPage = () => {
 
         {loading ? (
           <div className="text-center py-4">
-            <p className="text-gray-600 dark:text-gray-400">Loading your balance...</p>
+            <p className="text-muted-foreground">Loading your balance...</p>
           </div>
         ) : error ? (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
@@ -659,23 +659,23 @@ export const BillingPage = () => {
                 <span className="text-4xl font-bold text-green-600 dark:text-green-400">
                   ${balance}
                 </span>
-                <span className="ml-2 text-gray-600 dark:text-gray-400">USD</span>
+                <span className="ml-2 text-muted-foreground">USD</span>
               </div>
             </div>
 
             {/* Breakdown */}
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+            <div className="border-t border-border pt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Total credits:</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">${totalCredits}</span>
+                <span className="text-muted-foreground">Total credits:</span>
+                <span className="font-medium text-foreground">${totalCredits}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Current billing period usage:</span>
+                <span className="text-muted-foreground">Current billing period usage:</span>
                 <span className="font-medium text-red-600 dark:text-red-400">-${currentUsage.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm font-semibold border-t border-gray-200 dark:border-gray-700 pt-2">
-                <span className="text-gray-900 dark:text-gray-100">Remaining balance:</span>
-                <span className="text-gray-900 dark:text-gray-100">${balance}</span>
+              <div className="flex justify-between text-sm font-semibold border-t border-border pt-2">
+                <span className="text-foreground">Remaining balance:</span>
+                <span className="text-foreground">${balance}</span>
               </div>
             </div>
 
@@ -699,7 +699,7 @@ export const BillingPage = () => {
             {hasPaymentMethod ? (
               <button
                 onClick={openTopUpModal}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-colors"
               >
                 Top Up Credits
               </button>
@@ -707,7 +707,7 @@ export const BillingPage = () => {
               <button
                 onClick={handleAddPaymentMethod}
                 disabled={processingPaymentSetup}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
+                className="w-full bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
               >
                 {processingPaymentSetup ? "Redirecting..." : "Add Payment Method"}
               </button>
@@ -718,7 +718,7 @@ export const BillingPage = () => {
 
       {/* Payment Method Section - Only show if user has payment methods */}
       {paymentMethods.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-card rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
 
           <div className="space-y-4">
@@ -727,21 +727,21 @@ export const BillingPage = () => {
               return (
                 <div
                   key={pm.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  className="flex items-center justify-between p-4 border border-border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
                     {pm.card && (
                       <>
-                        <div className="text-gray-900 dark:text-gray-100">
+                        <div className="text-foreground">
                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                           </svg>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                          <p className="font-medium text-foreground">
                             {pm.card.brand.charAt(0).toUpperCase() + pm.card.brand.slice(1)} •••• {pm.card.last4}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-muted-foreground">
                             Expires {pm.card.exp_month}/{pm.card.exp_year}
                           </p>
                         </div>
@@ -770,32 +770,32 @@ export const BillingPage = () => {
 
 
       {/* Model Usage Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-card rounded-lg shadow-md p-6 mb-6">
         <div className="mb-4">
           <h2 className="text-xl font-semibold">Current Billing Period Usage</h2>
           {billingPeriod && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {formatBillingPeriodDate(billingPeriod.from)} - {formatBillingPeriodDate(billingPeriod.to)}
             </p>
           )}
         </div>
 
         {loadingTransactions ? (
-          <p className="text-gray-600 dark:text-gray-400">Loading usage data...</p>
+          <p className="text-muted-foreground">Loading usage data...</p>
         ) : (() => {
           const usedModels = modelUsage.filter(usage => usage.totalTokens > 0);
           return usedModels.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400">No usage data for this billing period yet</p>
+            <p className="text-muted-foreground">No usage data for this billing period yet</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Tokens</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Tokens</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Total Tokens</th>
-                    <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Cost</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-2 font-semibold text-foreground">Model</th>
+                    <th className="text-right py-3 px-2 font-semibold text-foreground">Input Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-foreground">Output Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-foreground">Total Tokens</th>
+                    <th className="text-right py-3 px-2 font-semibold text-foreground">Cost</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -804,45 +804,45 @@ export const BillingPage = () => {
                     .map((usage) => (
                     <tr
                       key={usage.model}
-                      className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                      className="border-b border-border last:border-0"
                     >
-                      <td className="py-3 px-2 text-gray-900 dark:text-gray-100 font-medium">
+                      <td className="py-3 px-2 text-foreground font-medium">
                         {usage.model}
                       </td>
-                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                      <td className="py-3 px-2 text-right text-muted-foreground">
                         {usage.inputTokens.toLocaleString()}
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                        <span className="text-xs text-muted-foreground ml-1">
                           (${usage.inputCost.toFixed(4)})
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                      <td className="py-3 px-2 text-right text-muted-foreground">
                         {usage.outputTokens.toLocaleString()}
-                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                        <span className="text-xs text-muted-foreground ml-1">
                           (${usage.outputCost.toFixed(4)})
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300 font-medium">
+                      <td className="py-3 px-2 text-right text-muted-foreground font-medium">
                         {usage.totalTokens.toLocaleString()}
                       </td>
-                      <td className="py-3 px-2 text-right font-semibold text-gray-900 dark:text-gray-100">
+                      <td className="py-3 px-2 text-right font-semibold text-foreground">
                         ${usage.totalCost.toFixed(4)}
                       </td>
                     </tr>
                   ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-300 dark:border-gray-600 font-semibold">
-                  <td className="py-3 px-2 text-gray-900 dark:text-gray-100">Total</td>
-                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                <tr className="border-t-2 border-border font-semibold">
+                  <td className="py-3 px-2 text-foreground">Total</td>
+                  <td className="py-3 px-2 text-right text-foreground">
                     {usedModels.reduce((sum, u) => sum + u.inputTokens, 0).toLocaleString()}
                   </td>
-                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                  <td className="py-3 px-2 text-right text-foreground">
                     {usedModels.reduce((sum, u) => sum + u.outputTokens, 0).toLocaleString()}
                   </td>
-                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                  <td className="py-3 px-2 text-right text-foreground">
                     {usedModels.reduce((sum, u) => sum + u.totalTokens, 0).toLocaleString()}
                   </td>
-                  <td className="py-3 px-2 text-right text-gray-900 dark:text-gray-100">
+                  <td className="py-3 px-2 text-right text-foreground">
                     ${usedModels.reduce((sum, u) => sum + u.totalCost, 0).toFixed(4)}
                   </td>
                 </tr>
@@ -854,29 +854,29 @@ export const BillingPage = () => {
       </div>
 
       {/* Transaction History */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-card rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
 
         {loadingTransactions ? (
-          <p className="text-gray-600 dark:text-gray-400">Loading transactions...</p>
+          <p className="text-muted-foreground">Loading transactions...</p>
         ) : (() => {
           const settledTransactions = transactions.filter(tx => tx.status === "settled");
           return settledTransactions.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
+            <p className="text-muted-foreground">No transactions yet</p>
           ) : (
             <div className="space-y-3">
               {settledTransactions.slice(0, 10).map((tx) => (
                 <div
                   key={tx.lago_id}
-                  className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-gray-700 last:border-0"
+                  className="flex justify-between items-center py-3 border-b border-border last:border-0"
                 >
                   <div>
                     {tx.name && (
-                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                      <p className="font-medium text-foreground">
                         {tx.name}
                       </p>
                     )}
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       {formatRelativeTime(tx.created_at)}
                     </p>
                   </div>
@@ -900,25 +900,25 @@ export const BillingPage = () => {
       </div>
 
       {/* Model Pricing */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-card rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">Model Pricing</h2>
 
         {loadingPricing ? (
-          <p className="text-gray-600 dark:text-gray-400">Loading pricing data...</p>
+          <p className="text-muted-foreground">Loading pricing data...</p>
         ) : pricingError ? (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <p className="text-red-800 dark:text-red-200">{pricingError}</p>
           </div>
         ) : modelPricing.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">No pricing data available</p>
+          <p className="text-muted-foreground">No pricing data available</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Model</th>
-                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Input Cost per 1M Tokens</th>
-                  <th className="text-right py-3 px-2 font-semibold text-gray-900 dark:text-gray-100">Output Cost per 1M Tokens</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-2 font-semibold text-foreground">Model</th>
+                  <th className="text-right py-3 px-2 font-semibold text-foreground">Input Cost per 1M Tokens</th>
+                  <th className="text-right py-3 px-2 font-semibold text-foreground">Output Cost per 1M Tokens</th>
                 </tr>
               </thead>
               <tbody>
@@ -927,15 +927,15 @@ export const BillingPage = () => {
                   .map((pricing) => (
                   <tr
                     key={pricing.model_name}
-                    className="border-b border-gray-200 dark:border-gray-700 last:border-0"
+                    className="border-b border-border last:border-0"
                   >
-                    <td className="py-3 px-2 text-gray-900 dark:text-gray-100 font-medium">
+                    <td className="py-3 px-2 text-foreground font-medium">
                       {pricing.model_name}
                     </td>
-                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                    <td className="py-3 px-2 text-right text-muted-foreground">
                       ${(pricing.input_cost_per_token * 1000000).toFixed(2)}
                     </td>
-                    <td className="py-3 px-2 text-right text-gray-700 dark:text-gray-300">
+                    <td className="py-3 px-2 text-right text-muted-foreground">
                       ${(pricing.output_cost_per_token * 1000000).toFixed(2)}
                     </td>
                   </tr>
@@ -949,23 +949,23 @@ export const BillingPage = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="bg-card rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               Delete Payment Method
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Are you sure you want to delete this payment method? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={cancelDeletePaymentMethod}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors"
+                className="px-4 py-2 text-secondary-foreground bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeletePaymentMethod}
-                className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
+                className="px-4 py-2 text-white bg-destructive hover:bg-destructive/90 rounded-lg font-medium transition-colors"
               >
                 Delete
               </button>
@@ -977,8 +977,8 @@ export const BillingPage = () => {
       {/* Top Up Modal */}
       {showTopUpModal && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <div className="bg-card rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Top Up Credits
             </h3>
 
@@ -989,11 +989,11 @@ export const BillingPage = () => {
             )}
 
             <div className="mb-6">
-              <label htmlFor="topUpAmount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="topUpAmount" className="block text-sm font-medium text-muted-foreground mb-2">
                 Amount (USD)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                 <input
                   id="topUpAmount"
                   type="number"
@@ -1001,17 +1001,17 @@ export const BillingPage = () => {
                   step="0.01"
                   value={topUpAmount}
                   onChange={(e) => setTopUpAmount(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                   disabled={processingTopUp}
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Minimum top-up amount is $1. Your payment method will be charged immediately.
               </p>
             </div>
 
             {processingTopUp && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 text-center">
+              <p className="text-sm text-muted-foreground mb-4 text-center">
                 Processing your payment...
               </p>
             )}
@@ -1020,14 +1020,14 @@ export const BillingPage = () => {
               <button
                 onClick={closeTopUpModal}
                 disabled={processingTopUp}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-secondary-foreground bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmTopUp}
                 disabled={processingTopUp || !topUpAmount || parseFloat(topUpAmount) < 1}
-                className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {processingTopUp ? "Processing..." : "Confirm"}
               </button>

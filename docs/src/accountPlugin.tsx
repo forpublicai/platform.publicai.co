@@ -1,10 +1,10 @@
 import type { NavigationPlugin } from "zudoku/plugins";
 import { BillingPage } from "./BillingPage";
 
-export const billingPlugin: NavigationPlugin = {
+export const accountPlugin: NavigationPlugin = {
   getRoutes: () => [
     {
-      path: "/billing",
+      path: "/account/billing",
       element: <BillingPage />,
     },
   ],

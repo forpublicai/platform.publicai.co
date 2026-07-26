@@ -1,107 +1,143 @@
+import "./styles/theme.css";
 import type { ZudokuConfig } from "zudoku";
-import { billingPlugin } from "./src/billingPlugin";
+import { accountPlugin } from "./src/accountPlugin";
+import { createApiKey } from "./src/apiKeyHandlers";
 
 const config: ZudokuConfig = {
-  plugins: [billingPlugin],
+  plugins: [accountPlugin],
   site: {
-    title: "Public AI Gateway",
+    title: "",
     logo: {
       src: {
-        light: "https://chat.publicai.co/static/favicon.png",
-        dark: "https://chat.publicai.co/static/favicon.png",
+        light: "/public-ai-inference-utility-logo.svg",
+        dark: "/public-ai-inference-utility-logo.svg",
       },
+      alt: "Public AI Inference Utility",
+      width: "180px",
+    },
+    footer: {
+      position: "start",
+      columns: [
+        {
+          title: "Public AI",
+          links: [
+            { label: "Website", href: "https://publicai.co" },
+            { label: "Chat", href: "https://chat.publicai.co" },
+            { label: "GitHub", href: "https://github.com/forpublicai" },
+            { label: "Get Involved", href: "https://publicai.co/contributing" },
+          ],
+        },
+        {
+          title: "Legal",
+          links: [
+            { label: "Terms & Privacy", href: "https://publicai.co/tc" },
+          ],
+        },
+      ],
+      social: [
+        { icon: "github", href: "https://github.com/forpublicai" },
+      ],
+      copyright: `© ${new Date().getFullYear()} Public AI Inference Utility. All rights reserved.`,
     },
   },
   metadata: {
     title: "Public AI Gateway - Developer Portal",
     description: "Access open-source AI models through our unified gateway. Documentation, API reference, and tools for developers.",
   },
+  theme: {
+    fonts: {
+      sans: {
+        url: "https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600&display=swap",
+        fontFamily: "Public Sans",
+      },
+      mono: {
+        url: "https://fonts.googleapis.com/css2?family=Overpass+Mono:wght@400&display=swap",
+        fontFamily: "Overpass Mono",
+      },
+    },
+    light: {
+      background: "#FFFFFF",
+      foreground: "#000000",
+      card: "#FFFFFF",
+      cardForeground: "#000000",
+      primary: "#EF3C24",
+      primaryForeground: "#FFFFFF",
+      secondary: "#F7F7F7",
+      secondaryForeground: "#000000",
+      muted: "#F7F7F7",
+      mutedForeground: "#000000",
+      accent: "#F7F7F7",
+      accentForeground: "#000000",
+      destructive: "#EF3C24",
+      destructiveForeground: "#FFFFFF",
+      border: "#D9D9D9",
+      input: "#D9D9D9",
+      ring: "#EF3C24",
+      radius: "0.625rem",
+    },
+    dark: {
+      background: "#000000",
+      foreground: "#FFFFFF",
+      card: "#111111",
+      cardForeground: "#FFFFFF",
+      primary: "#EF3C24",
+      primaryForeground: "#FFFFFF",
+      secondary: "#1a1a1a",
+      secondaryForeground: "#FFFFFF",
+      muted: "#1a1a1a",
+      mutedForeground: "#FFFFFF",
+      accent: "#1a1a1a",
+      accentForeground: "#FFFFFF",
+      destructive: "#FE6550",
+      destructiveForeground: "#FFFFFF",
+      border: "#555555",
+      input: "#555555",
+      ring: "#EF3C24",
+      radius: "0.625rem",
+    },
+  },
   navigation: [
     {
       type: "category",
-      label: "Documentation",
+      label: "Docs",
+      icon: "book",
       items: [
-        {
-          type: "category",
-          label: "Getting Started",
-          icon: "sparkles",
-          items: [
-            {
-              type: "doc",
-              file: "docs",
-              label: "Quick Start Guide",
-            },
-            {
-              type: "doc",
-              file: "inference-partners-faq",
-              label: "Inference Partners FAQ",
-            },
-          ],
-        },
-        {
-          type: "category",
-          label: "Resources",
-          collapsible: false,
-          icon: "link",
-          items: [
-            {
-              type: "link",
-              label: "Public AI Website",
-              to: "https://publicai.co",
-            },
-            {
-              type: "link",
-              label: "Public AI Chat",
-              to: "https://chat.publicai.co/",
-            },
-            {
-              type: "link",
-              label: "GitHub",
-              to: "https://github.com/forpublicai",
-            },
-            {
-              type: "link",
-              label: "Swiss AI",
-              to: "https://huggingface.co/swiss-ai",
-            },
-            {
-              type: "link",
-              label: "Terms & Privacy",
-              to: "https://publicai.co/tc",
-            },
-            {
-              type: "link",
-              label: "Get Involved",
-              to: "https://publicai.co/contributing",
-            },
-          ],
-        },
+        { type: "doc", file: "docs", label: "Quick Start" },
+        { type: "doc", file: "models", label: "Available Models" },
+        { type: "doc", file: "plans", label: "Plans & Rate Limits" },
+        { type: "doc", file: "inference-partners-faq", label: "Inference Partners FAQ" },
+        { type: "doc", file: "support-us", label: "Support Us" },
       ],
     },
     {
       type: "link",
       to: "/api",
       label: "API Reference",
+      icon: "code",
     },
     {
-      type: "link",
-      to: "/billing",
-      label: "Billing",
+      type: "category",
+      label: "Account",
+      icon: "user",
+      items: [
+        { type: "link", to: "/account/billing", label: "Billing" },
+        { type: "link", to: "/settings/api-keys", label: "API Keys" },
+      ],
     },
-    {
-      "type": "doc",
-      "label": "Support Us",
-      "file": "support-us"
-    }
   ],
-  redirects: [{ from: "/", to: "/docs" }],
+  redirects: [
+    { from: "/", to: "/docs" },
+    { from: "/account", to: "/account/billing" },
+    { from: "/billing", to: "/account/billing" },
+    { from: "/account/api-keys", to: "/settings/api-keys" },
+  ],
   apis: [
     {
       type: "file",
       input: "../config/routes.oas.json",
       path: "api",
       options: {
-        disablePlayground: true, // Disable the interactive API playground
+        disablePlayground: true,
       },
     },
   ],
@@ -110,52 +146,14 @@ const config: ZudokuConfig = {
     domain: "login.publicai.co",
     clientId: "GsHpOedTKzJpnKlQIIeXDBKjssyOmOsj",
     audience: "https://docs.publicai.company/api",
-    protectedRoutes: ["/billing"],
+    redirectToAfterSignIn: "/account/billing",
+    redirectToAfterSignUp: "/account/billing",
+    protectedRoutes: ["/account/billing", "/settings/api-keys"],
   },
   apiKeys: {
     enabled: true,
-    deploymentName: process.env.ZUPLO_PUBLIC_DEPLOYMENT_NAME, // Note: Only required for local development
-    createKey: async ({ apiKey, context, auth }) => {
-      // process.env is used in config files and gets replaced at build time
-      const serverUrl = process.env.ZUPLO_PUBLIC_SERVER_URL || import.meta.env.ZUPLO_SERVER_URL || window.location.origin;
-
-      console.log("Creating API key with serverUrl:", serverUrl);
-
-      const createApiKeyRequest = new Request(serverUrl + "/v1/developer/api-key", {
-        method: "POST",
-        body: JSON.stringify({
-          ...apiKey,
-          email: auth.profile?.email,
-          metadata: {
-            userId: auth.profile?.sub,
-            name: auth.profile?.name,
-          },
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      try {
-        const signedRequest = await context.signRequest(createApiKeyRequest);
-        console.log("Signed request:", signedRequest.url);
-
-        const createApiKey = await fetch(signedRequest);
-        console.log("Response status:", createApiKey.status);
-
-        if (!createApiKey.ok) {
-          const errorText = await createApiKey.text();
-          console.error("API Key creation failed:", errorText);
-          throw new Error("Could not create API Key: " + errorText);
-        }
-
-        console.log("API Key created successfully");
-        return true;
-      } catch (error) {
-        console.error("Error in createKey:", error);
-        throw error;
-      }
-    },
+    deploymentName: process.env.ZUPLO_PUBLIC_DEPLOYMENT_NAME,
+    createKey: createApiKey,
   },
 };
 
