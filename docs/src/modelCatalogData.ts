@@ -80,15 +80,15 @@ export const MODEL_CATALOG: ModelEntry[] = [
     details:
       "32B instruction-tuned SEA-LION model built on Qwen3. Optimized for Southeast Asian languages and contexts, with strong performance on regional language tasks.",
   },
-  {
-    id: "allenai/Olmo-3-7B-Instruct",
-    contextLength: "65K",
-    inputPricePerMillion: 0.1,
-    outputPricePerMillion: 0.2,
-    country: "United States",
-    details:
-      "Compact 7B open model from the Allen Institute for AI. Fully open weights and training data. Strong for English instruction-following and general reasoning at low cost.",
-  },
+  // {
+  //   id: "allenai/Olmo-3-7B-Instruct",
+  //   contextLength: "65K",
+  //   inputPricePerMillion: 0.1,
+  //   outputPricePerMillion: 0.2,
+  //   country: "United States",
+  //   details:
+  //     "Compact 7B open model from the Allen Institute for AI. Fully open weights and training data. Strong for English instruction-following and general reasoning at low cost.",
+  // },
   {
     id: "speakleash/Bielik-11B-v3.0-Instruct",
     contextLength: "32K",
@@ -98,13 +98,13 @@ export const MODEL_CATALOG: ModelEntry[] = [
     details:
       "11B model trained on 32 European languages with emphasis on Polish. Excels at Polish-language tasks, logic, STEM, and tool use. Developed by SpeakLeash and ACK Cyfronet AGH.",
   },
-  {
-    id: "utter-project/EuroLLM-22B-Instruct-2512",
-    contextLength: "32K",
-    inputPricePerMillion: 0.1,
-    outputPricePerMillion: 0.2,
-    country: "European Union",
-    details:
-      "22B multilingual model covering all official EU languages plus additional European and global languages. Excels at translation across EU languages and general instruction-following. EU-funded open model.",
-  },
+  // {
+  //   id: "utter-project/EuroLLM-22B-Instruct-2512",
+  //   contextLength: "32K",
+  //   inputPricePerMillion: 0.1,
+  //   outputPricePerMillion: 0.2,
+  //   country: "European Union",
+  //   details:
+  //     "22B multilingual model covering all official EU languages plus additional European and global languages. Excels at translation across EU languages and general instruction-following. EU-funded open model.",
+  // },
 ];
