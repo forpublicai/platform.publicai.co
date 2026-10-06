@@ -195,12 +195,15 @@ export const BillingPage = () => {
 
       const data: WalletData = await response.json();
 
-      // Get total credits from wallet
-      let walletCredits = 0;
+      // Get ongoing wallet balance and total credits
+      let ongoingBalance = 0;
+      let initialCredits = 0;
       if (data.wallets && data.wallets.length > 0) {
         const wallet = data.wallets[0];
-        walletCredits = parseFloat(wallet.credits_balance || "0");
-        setTotalCredits(walletCredits.toFixed(2));
+        // Standardize on credits_ongoing_balance which reflects actual real-time deductions in Lago
+        ongoingBalance = parseFloat(wallet.credits_ongoing_balance || wallet.credits_balance || "0");
+        initialCredits = parseFloat(wallet.credits_balance || wallet.credits_ongoing_balance || "0");
+        setTotalCredits(initialCredits.toFixed(2));
       } else {
         setTotalCredits("0.00");
       }
@@ -214,9 +217,8 @@ export const BillingPage = () => {
         setCurrentUsage(0);
       }
 
-      // Calculate remaining balance = total credits - current usage
-      const remainingBalance = walletCredits - usageAmount;
-      setBalance(remainingBalance.toFixed(2));
+      // Standardized remaining balance matching Gateway evaluation
+      setBalance(ongoingBalance.toFixed(2));
 
       // Set payment method status and methods list
       setHasPaymentMethod(data.hasPaymentMethod || false);

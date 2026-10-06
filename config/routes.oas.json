@@ -152,7 +152,8 @@
               "api-key-inbound",
               "user-rate-limit",
               "bedrock-guardrail-policy",
-              "set-litellm-auth"
+              "set-litellm-auth",
+              "set-litellm-headers"
             ]
           }
         },

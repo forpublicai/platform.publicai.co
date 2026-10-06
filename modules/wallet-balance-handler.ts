@@ -100,8 +100,17 @@ export default async function (
       }
     );
 
-    // If customer not found (404), provision them
-    if (checkWalletResponse.status === 404) {
+    // If customer not found (404) or wallet array is empty (unprovisioned / stuck customer), provision them
+    let shouldProvision = checkWalletResponse.status === 404;
+    if (checkWalletResponse.ok) {
+      const peekData = await checkWalletResponse.clone().json();
+      if (!peekData.wallets || peekData.wallets.length === 0) {
+        context.log.info(`User ${userId} has no wallets in Lago, triggering provisioning / self-healing...`);
+        shouldProvision = true;
+      }
+    }
+
+    if (shouldProvision) {
       context.log.info(`Customer ${userId} not found in Lago, provisioning...`);
 
       const provisionResult = await provisionCustomer(userId, context);
