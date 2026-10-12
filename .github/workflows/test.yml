@@ -1,0 +1,24 @@
+name: Unit tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.6"
+
+      - name: Install @zuplo/runtime test stub
+        run: |
+          mkdir -p node_modules/@zuplo
+          cp -r test/zuplo-runtime-stub node_modules/@zuplo/runtime
+
+      - name: Run module unit tests
+        run: node --experimental-strip-types --test test/*.test.ts

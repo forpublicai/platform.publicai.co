@@ -1,0 +1,7 @@
+{
+  "name": "@zuplo/runtime",
+  "version": "0.0.0-test-stub",
+  "description": "Minimal test-only stub, not the real @zuplo/runtime. Provides just enough for unit tests to run without network access to npm.",
+  "main": "index.js",
+  "types": "index.d.ts"
+}
