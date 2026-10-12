@@ -8,7 +8,7 @@ The Public AI Inference Utility is a global compute platform that provides free 
 
 Unlike commercial AI APIs that prioritize profit maximization, the Utility is designed to serve the public interest. We provide transparent pricing, open governance, and equitable access to ensure that AI capabilities are available to everyone, not just those who can afford premium services.
 
-This repository contains the developer portal and API gateway that enables developers to:
+This repository contains the developer portal and API gateway that enable developers to:
 - Create and manage API keys for accessing AI models
 - View API documentation and usage examples
 - Monitor API usage and billing
@@ -59,7 +59,7 @@ cp env.example .env
 
 Add the required environment variables:
 
-- `ZP_DEVELOPER_API_KEY`: Account level API key for Zuplo API access
+- `ZP_DEVELOPER_API_KEY`: Account-level API key for Zuplo API access
 - `ZP_ACCOUNT_NAME`: Your Zuplo account name
 - `ZP_API_KEY_SERVICE_BUCKET_NAME`: Bucket name for the API Key Service
 
@@ -68,7 +68,7 @@ Add the required environment variables:
 ### API Key Management
 Developers can create and manage API keys through the portal:
 1. Sign in to the developer portal
-2. Navigate to API Keys section
+2. Navigate to the API Keys section
 3. Create new API keys with custom names and expiration times
 4. Manage existing keys (view, rotate, delete)
 
@@ -88,7 +88,7 @@ We welcome contributions from the community! There are several ways you can help
 
 ### 🤝 Community Contributions
 - Custom functions and tools for the platform
-- Language and region-specific enhancements
+- Language- and region-specific enhancements
 - Documentation and examples
 
 ### ⚙️ Infrastructure Contributions
