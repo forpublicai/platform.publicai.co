@@ -14,6 +14,11 @@ This repository contains the developer portal and API gateway that enable develo
 - Monitor API usage and billing
 - Access developer resources and community contributions
 
+## API Documentation
+
+- **Interactive Docs**: [platform.publicai.co](https://platform.publicai.co) - Full documentation with interactive examples
+- **Static Docs (LLMS.md)**: [LLMS.md](LLMS.md) - Text-based documentation for AI agents and automated systems that cannot execute JavaScript
+
 ## Main Platform
 
 - **Chat Interface**: [chat.publicai.co](https://chat.publicai.co) - Interactive AI chat interface
