@@ -183,8 +183,9 @@ export default async function (
     // Process parallel wallet result if available
     if (walletRes.ok) {
       const walletData = await walletRes.json();
-      if (walletData.wallets && walletData.wallets.length > 0) {
-        cachedBalance = parseFloat(walletData.wallets[0].credits_ongoing_balance || "0");
+      const activeWallet = walletData.wallets?.find((w: any) => w.status === "active");
+      if (activeWallet) {
+        cachedBalance = parseFloat(activeWallet.credits_ongoing_balance || "0");
         setCachedWalletBalance(userId, cachedBalance);
       }
     }
@@ -223,11 +224,12 @@ export default async function (
 
       if (checkWalletResponse.ok) {
         const walletData = await checkWalletResponse.json();
-        if (walletData.wallets && walletData.wallets.length > 0) {
-          creditsBalance = parseFloat(walletData.wallets[0].credits_ongoing_balance || "0");
+        const activeWallet = walletData.wallets?.find((w: any) => w.status === "active");
+        if (activeWallet) {
+          creditsBalance = parseFloat(activeWallet.credits_ongoing_balance || "0");
           setCachedWalletBalance(userId, creditsBalance);
         } else {
-          context.log.warn(`User ${userId} has active subscription but no wallet found`);
+          context.log.warn(`User ${userId} has active subscription but no active wallet found`);
           creditsBalance = 0;
         }
       } else {

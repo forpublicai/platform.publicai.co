@@ -72,68 +72,122 @@ export async function provisionCustomer(
 
     context.log.info(`Consumer email: ${userEmail}, name: ${userName}`);
 
-    // Create customer
-    const createCustomerResponse = await fetch(
-      `${environment.LAGO_API_BASE}/api/v1/customers`,
+    // Check if customer already exists in Lago
+    const checkCustomerResponse = await fetch(
+      `${environment.LAGO_API_BASE}/api/v1/customers/${userId}`,
       {
-        method: "POST",
+        method: "GET",
         headers: {
           "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          customer: {
-            external_id: userId,
-            name: userName,
-            email: userEmail || `${userId}@placeholder.com`,
-            billing_configuration: {
-              payment_provider: "stripe",
-              payment_provider_code: environment.STRIPE_PAYMENT_PROVIDER_CODE || "stripe_test",
-              sync_with_provider: true,
-              sync: true
-            }
-          }
-        })
+        }
       }
     );
 
-    if (!createCustomerResponse.ok) {
-      const error = await createCustomerResponse.text();
-      context.log.error(`Failed to create Lago customer: ${error}`);
-      return { success: false, userId, error: `Failed to create customer: ${error}` };
+    let customerExists = checkCustomerResponse.ok;
+
+    if (!customerExists) {
+      // Create customer
+      const createCustomerResponse = await fetch(
+        `${environment.LAGO_API_BASE}/api/v1/customers`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            customer: {
+              external_id: userId,
+              name: userName,
+              email: userEmail || `${userId}@placeholder.com`,
+              billing_configuration: {
+                payment_provider: "stripe",
+                payment_provider_code: environment.STRIPE_PAYMENT_PROVIDER_CODE || "stripe_test",
+                sync_with_provider: true,
+                sync: true
+              }
+            }
+          })
+        }
+      );
+
+      if (!createCustomerResponse.ok) {
+        // If customer was created concurrently, treat as existing
+        if (createCustomerResponse.status === 422) {
+          const errText = await createCustomerResponse.text();
+          if (errText.includes("already_exists") || errText.includes("taken")) {
+            context.log.info(`Customer ${userId} was already created concurrently`);
+            customerExists = true;
+          } else {
+            context.log.error(`Failed to create Lago customer (422): ${errText}`);
+            return { success: false, userId, error: `Failed to create customer: ${errText}` };
+          }
+        } else {
+          const error = await createCustomerResponse.text();
+          context.log.error(`Failed to create Lago customer: ${error}`);
+          return { success: false, userId, error: `Failed to create customer: ${error}` };
+        }
+      } else {
+        context.log.info(`Created Lago customer: ${userId}`);
+      }
+    } else {
+      context.log.info(`Customer ${userId} already exists in Lago`);
     }
 
-    context.log.info(`Created Lago customer: ${userId}`);
-
-    // Create wallet with $1 USD in credits
-    const createWalletResponse = await fetch(
-      `${environment.LAGO_API_BASE}/api/v1/wallets`,
+    // Check if customer already has an active wallet before attempting creation
+    const checkExistingWalletRes = await fetch(
+      `${environment.LAGO_API_BASE}/api/v1/wallets?external_customer_id=${userId}`,
       {
-        method: "POST",
+        method: "GET",
         headers: {
           "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
           "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          wallet: {
-            external_customer_id: userId,
-            name: "Prepaid Credits",
-            rate_amount: "1.0",
-            currency: "USD",
-            granted_credits: "2.0",
-            transaction_name: "Welcome to Public AI!"
-          }
-        })
+        }
       }
     );
 
-    if (createWalletResponse.ok) {
-      const wallet = await createWalletResponse.json();
-      context.log.info(`Created Lago wallet with $10 credits: ${wallet.wallet?.lago_id}`);
-    } else {
-      const error = await createWalletResponse.text();
-      context.log.error(`Failed to create Lago wallet: ${error}`);
-      // Continue even if wallet creation fails
+    let hasExistingWallet = false;
+    if (checkExistingWalletRes.ok) {
+      const walletList = await checkExistingWalletRes.json();
+      const activeWallet = walletList.wallets?.find((w: any) => w.status === "active");
+      if (activeWallet) {
+        hasExistingWallet = true;
+        context.log.info(`Customer ${userId} already has active wallet: ${activeWallet.lago_id}, skipping creation.`);
+      }
+    }
+
+    if (!hasExistingWallet) {
+      // Create wallet with $2 USD in credits
+      const createWalletResponse = await fetch(
+        `${environment.LAGO_API_BASE}/api/v1/wallets`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${environment.LAGO_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            wallet: {
+              external_customer_id: userId,
+              name: "Prepaid Credits",
+              rate_amount: "1.0",
+              currency: "USD",
+              granted_credits: "2.0",
+              transaction_name: "Welcome to Public AI!"
+            }
+          })
+        }
+      );
+
+      if (createWalletResponse.ok) {
+        const wallet = await createWalletResponse.json();
+        context.log.info(`Created Lago wallet: ${wallet.wallet?.lago_id}`);
+      } else {
+        const error = await createWalletResponse.text();
+        context.log.error(`Failed to create Lago wallet: ${error}`);
+        // Continue even if wallet creation fails
+      }
     }
 
     // Create subscription

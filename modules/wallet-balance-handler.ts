@@ -100,14 +100,30 @@ export default async function (
       }
     );
 
-    // If customer not found (404) or wallet array is empty (unprovisioned / stuck customer), provision them
+    // Only provision if customer does not exist in Lago (HTTP 404).
+    // Never trigger provisioning on 200 OK or 5xx/transient gateway errors.
     let shouldProvision = checkWalletResponse.status === 404;
     if (checkWalletResponse.ok) {
       const peekData = await checkWalletResponse.clone().json();
-      if (!peekData.wallets || peekData.wallets.length === 0) {
-        context.log.info(`User ${userId} has no wallets in Lago, triggering provisioning / self-healing...`);
+      const hasActive = peekData.wallets?.some((w: any) => w.status === "active");
+      if (!hasActive) {
+        context.log.warn(`User ${userId} exists but has no active wallet records in Lago. Triggering provisioning check...`);
         shouldProvision = true;
       }
+    } else if (checkWalletResponse.status >= 500) {
+      context.log.error(`Lago API returned server error ${checkWalletResponse.status} while fetching wallet for ${userId}`);
+      return new Response(
+        JSON.stringify({
+          error: {
+            message: "Billing service temporarily unavailable. Please retry shortly.",
+            type: "service_unavailable"
+          }
+        }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
     }
 
     if (shouldProvision) {
@@ -276,11 +292,17 @@ export default async function (
       context.log.warn(`Error fetching customer portal URL: ${error}`);
     }
 
+    // Sort wallets so active wallet is first (ensuring UI dashboard binds to active wallet)
+    if (walletData.wallets && Array.isArray(walletData.wallets)) {
+      walletData.wallets.sort((a: any, b: any) => (a.status === "active" ? -1 : (b.status === "active" ? 1 : 0)));
+    }
+
     // Fetch wallet transactions from Lago
     let walletTransactions = [];
-    if (walletData.wallets && walletData.wallets.length > 0) {
-      const walletId = walletData.wallets[0].lago_id;
-      context.log.info(`Fetching transactions for wallet ID: ${walletId}`);
+    const activeWallet = walletData.wallets?.find((w: any) => w.status === "active");
+    if (activeWallet) {
+      const walletId = activeWallet.lago_id;
+      context.log.info(`Fetching transactions for active wallet ID: ${walletId}`);
 
       try {
         const transactionsResponse = await fetch(

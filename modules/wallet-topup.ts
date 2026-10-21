@@ -48,17 +48,18 @@ export async function topUpWallet(
 
   const walletData = await checkWalletResponse.json();
 
-  if (!walletData.wallets || walletData.wallets.length === 0) {
-    context.log.error("No wallet found for customer");
+  const activeWallet = walletData.wallets?.find((w: any) => w.status === "active");
+  if (!activeWallet) {
+    context.log.error("No active wallet found for customer");
     return {
       success: false,
-      error: "No wallet found for user"
+      error: "No active wallet found for user"
     };
   }
 
-  const wallet = walletData.wallets[0];
+  const wallet = activeWallet;
   const walletId = wallet.lago_id;
-  context.log.info(`Found wallet ID: ${walletId}`);
+  context.log.info(`Found active wallet ID: ${walletId}`);
 
   try {
     // Create wallet transaction (top-up)
