@@ -6,6 +6,8 @@ import { topUpWallet } from "./wallet-topup";
 // Format: "userId:threshold:topupAmount,userId2:threshold:topupAmount"
 // Example: "abc-123:70:10,def-456:50:20"
 const AUTO_TOPUP_USERS = new Map<string, { threshold: number; topupAmount: number }>();
+const AUTO_TOPUP_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown per user
+const AUTO_TOPUP_LAST_FIRED = new Map<string, number>();
 
 if (environment.AUTO_TOPUP_CONFIG) {
   const configs = environment.AUTO_TOPUP_CONFIG.split(',');
@@ -242,22 +244,31 @@ export default async function (
       // Check for auto top-up eligibility
       const autoTopupConfig = AUTO_TOPUP_USERS.get(userId);
       if (autoTopupConfig && creditsBalance < autoTopupConfig.threshold) {
-        context.log.info(`Auto top-up triggered for user ${userId}: balance $${creditsBalance.toFixed(2)} < threshold $${autoTopupConfig.threshold}`);
+        const now = Date.now();
+        const lastFired = AUTO_TOPUP_LAST_FIRED.get(userId);
 
-        const topupResult = await topUpWallet(
-          userId,
-          autoTopupConfig.topupAmount,
-          context,
-          "Auto top-up. Credits purchased",
-          false
-        );
-
-        if (topupResult.success && topupResult.newBalance !== undefined) {
-          creditsBalance = topupResult.newBalance;
-          setCachedWalletBalance(userId, creditsBalance);
-          context.log.info(`Successfully topped up $${autoTopupConfig.topupAmount} for user ${userId}. New balance: $${creditsBalance.toFixed(2)}`);
+        if (lastFired && now - lastFired < AUTO_TOPUP_COOLDOWN_MS) {
+          const remainingSeconds = Math.ceil((AUTO_TOPUP_COOLDOWN_MS - (now - lastFired)) / 1000);
+          context.log.info(`Auto top-up skipped for user ${userId}: in cooldown (${remainingSeconds}s remaining)`);
         } else {
-          context.log.error(`Failed to auto top-up wallet for user ${userId}: ${topupResult.error}`);
+          AUTO_TOPUP_LAST_FIRED.set(userId, now);
+          context.log.info(`Auto top-up triggered for user ${userId}: balance $${creditsBalance.toFixed(2)} < threshold $${autoTopupConfig.threshold}`);
+
+          const topupResult = await topUpWallet(
+            userId,
+            autoTopupConfig.topupAmount,
+            context,
+            "Auto top-up. Credits purchased",
+            false
+          );
+
+          if (topupResult.success && topupResult.newBalance !== undefined) {
+            creditsBalance = topupResult.newBalance;
+            setCachedWalletBalance(userId, creditsBalance);
+            context.log.info(`Successfully topped up $${autoTopupConfig.topupAmount} for user ${userId}. New balance: $${creditsBalance.toFixed(2)}`);
+          } else {
+            context.log.error(`Failed to auto top-up wallet for user ${userId}: ${topupResult.error}`);
+          }
         }
       }
 
