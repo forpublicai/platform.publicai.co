@@ -2,9 +2,13 @@ import "./styles/theme.css";
 import type { ZudokuConfig } from "zudoku";
 import { accountPlugin } from "./src/accountPlugin";
 import { createApiKey } from "./src/apiKeyHandlers";
+import { ChatwootWidget } from "./src/ChatwootWidget";
 
 const config: ZudokuConfig = {
   plugins: [accountPlugin],
+  slots: {
+    "layout-after-head": <ChatwootWidget />,
+  },
   site: {
     title: "",
     logo: {
